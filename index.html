@@ -797,15 +797,41 @@ async function initSupabase(){
     })
     .subscribe(s => console.log('[rt] messages channel:', s));
 
-  // ── Position sync every 200ms ──────────────────
-  setInterval(async ()=>{
-    if(!myIP||!myVisual) return;
-    const {error:e} = await db.from('players').update({
-      pos_x:+ST.pos.x.toFixed(3), pos_y:+ST.pos.y.toFixed(3), pos_z:+ST.pos.z.toFixed(3),
-      facing:+ST.facing.toFixed(3), anim:getMyAnim(), last_seen:new Date().toISOString()
-    }).eq('ip', myIP);
-    if(e) console.warn('[sync] update error:', e.message);
-  }, 200);
+  // ── Position sync: movement-triggered, debounced, no concurrent requests ──
+  // No setInterval — avoids memory leak from stacked pending Promises.
+  // Instead, the render loop calls _triggerSync() only when position changes.
+  let _syncLocked = false;
+  let _syncQueued = false;
+
+  async function _doSync() {
+    if(!myIP || !myVisual) return;
+    if(_syncLocked){ _syncQueued = true; return; }
+    _syncLocked = true;
+    try {
+      await db.from('players').update({
+        pos_x:   +ST.pos.x.toFixed(2),
+        pos_y:   +ST.pos.y.toFixed(2),
+        pos_z:   +ST.pos.z.toFixed(2),
+        facing:  +ST.facing.toFixed(2),
+        anim:    getMyAnim(),
+        last_seen: new Date().toISOString()
+      }).eq('ip', myIP);
+    } catch(e){ /* ignore transient network errors */ }
+    _syncLocked = false;
+    if(_syncQueued){ _syncQueued = false; _doSync(); }
+  }
+
+  let _syncTimer   = null;
+  let _lastSyncX   = 0, _lastSyncZ = 0;
+  let _lastSyncAnim = 'idle';
+
+  window._triggerSync = function(x, z, anim){
+    const moved = Math.abs(x - _lastSyncX) + Math.abs(z - _lastSyncZ);
+    if(moved < 0.25 && anim === _lastSyncAnim) return; // nothing meaningful changed
+    _lastSyncX = x; _lastSyncZ = z; _lastSyncAnim = anim;
+    clearTimeout(_syncTimer);
+    _syncTimer = setTimeout(_doSync, 100); // 100ms debounce
+  };
 
   // ── Stale player cleanup every 10s ─────────────
   setInterval(()=>{
@@ -845,6 +871,8 @@ function tick(){
     const anim=getMyAnim();
     if(anim!==ST.prevAnim){const info=AINFO[anim]||AINFO.idle;document.getElementById('hud-anim').textContent=info.i+' '+info.l;ST.prevAnim=anim;}
     applyAnim(myVisual,ST.pos,ST.facing,anim,ST.specialTime,ST.isDoubleJump,t);
+    // Trigger debounced position sync (no-op if _triggerSync not yet defined = offline)
+    if(typeof _triggerSync === 'function') _triggerSync(ST.pos.x, ST.pos.z, anim);
     // shadow + bubbles
     const surf=getSurface(ST.pos.x,ST.pos.z);
     myVisual.shadow.position.set(ST.pos.x,surf+.02,ST.pos.z);
