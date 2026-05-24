@@ -6,7 +6,7 @@
   <title>Roblox World — Multiplayer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
 <body class="bg-black overflow-hidden">
 <div class="relative w-screen h-screen select-none font-mono">
@@ -167,12 +167,10 @@
 'use strict';
 
 /* ═══════════════════════════════════════════════════════════════
-   SUPABASE SETUP
-   ─────────────────────────────────────────────────────────────
-   1. Create a project at supabase.com
-   2. In SQL Editor, run:
+   SUPABASE SETUP  — run this SQL in your Supabase SQL Editor:
 
-   create table players (
+   -- 1. TABLES
+   create table if not exists players (
      ip text primary key, name text,
      pos_x float8 default 0, pos_y float8 default 0,
      pos_z float8 default 0, facing float8 default 0,
@@ -181,34 +179,36 @@
      pants bigint default 1400256, skin bigint default 16700826,
      last_seen timestamptz default now()
    );
-   create table conv_requests (
+   create table if not exists conv_requests (
      id uuid primary key default gen_random_uuid(),
      from_ip text, to_ip text, status text default 'pending',
      created_at timestamptz default now()
    );
-   create table messages (
+   create table if not exists messages (
      id uuid primary key default gen_random_uuid(),
      from_ip text, to_ip text, text text,
      created_at timestamptz default now()
    );
+
+   -- 2. DISABLE RLS (required for anonymous browser access)
+   alter table players disable row level security;
+   alter table conv_requests disable row level security;
+   alter table messages disable row level security;
+
+   -- 3. ENABLE REALTIME
    alter publication supabase_realtime add table players;
    alter publication supabase_realtime add table conv_requests;
    alter publication supabase_realtime add table messages;
-
-   3. Fill in SUPABASE_URL and SUPABASE_KEY below.
    ═══════════════════════════════════════════════════════════ */
 
-const SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
-const SUPABASE_KEY = 'YOUR_ANON_KEY_HERE';
+const SUPABASE_URL = 'https://jimghytmdvpgqtxurwys.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_zWShDOc7rJZyEBmszVzM4Q_AVIyCazE';
 
 let db = null;
 try {
-  if (!SUPABASE_URL.includes('YOUR')) {
-    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  } else {
-    console.info('%c[RobloxWorld] Running in offline/demo mode. Fill SUPABASE_URL & SUPABASE_KEY to enable multiplayer.', 'color:#60a5fa');
-  }
-} catch(e) { console.warn('Supabase init failed:', e); }
+  db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  console.log('[supabase] client created ✓');
+} catch(e) { console.error('[supabase] createClient failed:', e); }
 
 // ═════════════════════════════════════════
 //  THREE.JS SETUP
@@ -296,12 +296,17 @@ const SKIN_P =[0xFFD59A,0xF4A460,0xCD853F,0x8B4513];
 
 function hashStr(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)^s.charCodeAt(i);return h>>>0;}
 function ipToProfile(ip){
-  const h=hashStr(ip);
-  return{name:ADJ[h%ADJ.length]+NOUN[(h>>4)%NOUN.length]+((h>>8)%99+1),
-    shirt:SHIRT_P[(h>>2)%SHIRT_P.length],hat:HAT_P[(h>>6)%HAT_P.length],
-    pants:PANTS_P[(h>>10)%PANTS_P.length],skin:SKIN_P[(h>>14)%SKIN_P.length]};
+  const h = hashStr(ip);
+  // Use >>> (unsigned right-shift) so indices are always positive
+  return {
+    name:  ADJ[h % ADJ.length] + NOUN[(h>>>4) % NOUN.length] + ((h>>>8) % 99 + 1),
+    shirt: SHIRT_P[(h>>>2)  % SHIRT_P.length],
+    hat:   HAT_P  [(h>>>6)  % HAT_P.length  ],
+    pants: PANTS_P[(h>>>10) % PANTS_P.length ],
+    skin:  SKIN_P [(h>>>14) % SKIN_P.length  ],
+  };
 }
-function hexCss(n){return'#'+n.toString(16).padStart(6,'0');}
+function hexCss(n){ return '#' + (n >>> 0).toString(16).padStart(6,'0'); }
 
 // ═════════════════════════════════════════
 //  CANVAS HELPERS
@@ -693,83 +698,129 @@ function refreshNearby(){
 //  SUPABASE INIT
 // ═════════════════════════════════════════
 async function initSupabase(){
-  // Get IP with two fallbacks
-  try{
-    const r=await fetch('https://api.ipify.org?format=json');
-    const d=await r.json(); myIP=d.ip;
-  }catch{
+  // ── Get visitor IP (3 fallbacks) ──────────────
+  const ipApis = [
+    'https://api.ipify.org?format=json',
+    'https://api64.ipify.org?format=json',
+    'https://ipapi.co/json/'
+  ];
+  for(const url of ipApis){
     try{
-      const r=await fetch('https://api64.ipify.org?format=json');
-      const d=await r.json(); myIP=d.ip;
-    }catch{ myIP='demo_'+Math.random().toString(36).slice(2,10); }
+      const ctrl = new AbortController();
+      const tid  = setTimeout(()=>ctrl.abort(), 4000);
+      const r = await fetch(url, {signal: ctrl.signal});
+      clearTimeout(tid);
+      const d = await r.json();
+      myIP = d.ip || d.IPv4 || d.query;
+      if(myIP){ console.log('[init] IP resolved:', myIP); break; }
+    }catch(e){ console.warn('[init] IP api failed:', url, e.message); }
   }
+  if(!myIP){ myIP = 'demo_' + Math.random().toString(36).slice(2,10); console.warn('[init] Using fallback ID:', myIP); }
 
+  // ── Build character ────────────────────────────
   try{
-    myProfile=ipToProfile(myIP);
-    myVisual=buildChar(myProfile);
-    drawNameTag(myVisual,myProfile.name,true);
+    myProfile = ipToProfile(myIP);
+    myVisual  = buildChar(myProfile);
+    drawNameTag(myVisual, myProfile.name, true);
+    const av = document.getElementById('pc-avatar');
+    av.textContent = myProfile.name[0];
+    av.style.backgroundColor = hexCss(myProfile.shirt);
+    document.getElementById('pc-name').textContent    = myProfile.name;
+    document.getElementById('cust-name').textContent  = myProfile.name;
+    console.log('[init] character built:', myProfile.name);
+  }catch(e){ console.error('[init] buildChar error:', e); return; }
 
-    const av=document.getElementById('pc-avatar');
-    av.textContent=myProfile.name[0];
-    av.style.backgroundColor=hexCss(myProfile.shirt);
-    document.getElementById('pc-name').textContent=myProfile.name;
-    document.getElementById('cust-name').textContent=myProfile.name;
-  }catch(e){ console.error('Character build error:',e); return; }
+  if(!db){ console.warn('[init] No Supabase client — offline mode'); return; }
 
-  if(!db)return; // offline mode
+  // ── Upsert own row (critical — check for error) ─
+  const {error: uErr} = await db.from('players').upsert({
+    ip: myIP, name: myProfile.name,
+    pos_x:0, pos_y:0, pos_z:0, facing:0, anim:'idle',
+    shirt: myProfile.shirt, hat: myProfile.hat,
+    pants: myProfile.pants, skin: myProfile.skin,
+    last_seen: new Date().toISOString()
+  }, {onConflict:'ip'});
 
-  // Upsert own record
-  await db.from('players').upsert({
-    ip:myIP,name:myProfile.name,pos_x:0,pos_y:0,pos_z:0,facing:0,anim:'idle',
-    shirt:myProfile.shirt,hat:myProfile.hat,pants:myProfile.pants,skin:myProfile.skin,
-    last_seen:new Date().toISOString()
-  },{onConflict:'ip'});
+  if(uErr){
+    console.error('[init] Upsert FAILED. Most likely cause: RLS is ON with no policies.',
+      '\nRun in Supabase SQL Editor:\n  alter table players disable row level security;',
+      '\nError:', uErr.message, uErr);
+    return;
+  }
+  console.log('[init] player upserted ✓');
 
-  // Load existing players
-  const {data:ex}=await db.from('players').select('*').neq('ip',myIP).gt('last_seen',new Date(Date.now()-60000).toISOString());
+  // ── Load existing online players ───────────────
+  const {data: ex, error: sErr} = await db.from('players').select('*')
+    .neq('ip', myIP)
+    .gt('last_seen', new Date(Date.now()-90000).toISOString());
+  if(sErr) console.warn('[init] select error:', sErr.message);
   (ex||[]).forEach(createOrUpdateRemote);
+  console.log('[init] loaded', ex?.length||0, 'existing players');
 
-  // Subscribe: players
-  db.channel('players-ch').on('postgres_changes',{event:'*',schema:'public',table:'players'},pl=>{
-    if(pl.eventType==='DELETE'){removeRemote(pl.old.ip);return;}
-    if(pl.new&&pl.new.ip!==myIP)createOrUpdateRemote(pl.new);
-  }).subscribe();
+  // ── Realtime: player positions ─────────────────
+  db.channel('players-ch')
+    .on('postgres_changes',{event:'*',schema:'public',table:'players'}, pl=>{
+      if(pl.eventType==='DELETE'){ removeRemote(pl.old.ip); return; }
+      if(pl.new && pl.new.ip !== myIP) createOrUpdateRemote(pl.new);
+    })
+    .subscribe(s => console.log('[rt] players channel:', s));
 
-  // Subscribe: conversation requests TO me
-  db.channel('convreq-ch').on('postgres_changes',{event:'INSERT',schema:'public',table:'conv_requests',filter:`to_ip=eq.${myIP}`},pl=>{
-    const req=pl.new,rp=remotes.get(req.from_ip);
-    showNotif(req.from_ip,rp?.name||req.from_ip,req.id);
-  }).on('postgres_changes',{event:'UPDATE',schema:'public',table:'conv_requests',filter:`from_ip=eq.${myIP}`},pl=>{
-    if(pl.new.status==='accepted'){
-      activeConvIP=pl.new.to_ip;
-      document.getElementById('chat-badge').textContent='● Active';
-      document.getElementById('chat-badge').className='text-xs bg-emerald-800 text-emerald-300 px-1.5 py-0.5 rounded-full font-bold';
-      addSysMsg(`${remotes.get(pl.new.to_ip)?.name||pl.new.to_ip} accepted! 🎉`);
-    }else if(pl.new.status==='declined')addSysMsg('Request declined.');
-  }).subscribe();
+  // ── Realtime: conversation requests ───────────
+  db.channel('convreq-ch')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'conv_requests'}, pl=>{
+      if(pl.new.to_ip !== myIP) return;
+      const rp = remotes.get(pl.new.from_ip);
+      showNotif(pl.new.from_ip, rp?.name||pl.new.from_ip, pl.new.id);
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'conv_requests'}, pl=>{
+      if(pl.new.from_ip !== myIP) return;
+      if(pl.new.status==='accepted'){
+        activeConvIP = pl.new.to_ip;
+        document.getElementById('chat-badge').textContent = '● Active';
+        document.getElementById('chat-badge').className = 'text-xs bg-emerald-800 text-emerald-300 px-1.5 py-0.5 rounded-full font-bold';
+        addSysMsg(`${remotes.get(pl.new.to_ip)?.name||pl.new.to_ip} accepted! 🎉`);
+      } else if(pl.new.status==='declined') addSysMsg('Request declined.');
+    })
+    .subscribe(s => console.log('[rt] conv_requests channel:', s));
 
-  // Subscribe: messages TO me
-  db.channel('msg-ch').on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:`to_ip=eq.${myIP}`},pl=>{
-    const msg=pl.new,rp=remotes.get(msg.from_ip);
-    addChatMsg(msg.from_ip,rp?.name||msg.from_ip,msg.text);
-    if(rp){drawBubble(rp.vis,msg.text);rp.vis.bMesh.visible=true;if(rp.vis.bubTimer)clearTimeout(rp.vis.bubTimer);rp.vis.bubTimer=setTimeout(()=>rp.vis.bMesh.visible=false,Math.max(3500,msg.text.length*95));}
-  }).subscribe();
+  // ── Realtime: chat messages ────────────────────
+  db.channel('msg-ch')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, pl=>{
+      if(pl.new.to_ip !== myIP) return;
+      const rp = remotes.get(pl.new.from_ip);
+      addChatMsg(pl.new.from_ip, rp?.name||pl.new.from_ip, pl.new.text);
+      if(rp){
+        drawBubble(rp.vis, pl.new.text); rp.vis.bMesh.visible=true;
+        if(rp.vis.bubTimer) clearTimeout(rp.vis.bubTimer);
+        rp.vis.bubTimer=setTimeout(()=>rp.vis.bMesh.visible=false, Math.max(3500,pl.new.text.length*95));
+      }
+    })
+    .subscribe(s => console.log('[rt] messages channel:', s));
 
-  // Position sync every 150ms
+  // ── Position sync every 200ms ──────────────────
+  setInterval(async ()=>{
+    if(!myIP||!myVisual) return;
+    const {error:e} = await db.from('players').update({
+      pos_x:+ST.pos.x.toFixed(3), pos_y:+ST.pos.y.toFixed(3), pos_z:+ST.pos.z.toFixed(3),
+      facing:+ST.facing.toFixed(3), anim:getMyAnim(), last_seen:new Date().toISOString()
+    }).eq('ip', myIP);
+    if(e) console.warn('[sync] update error:', e.message);
+  }, 200);
+
+  // ── Stale player cleanup every 10s ─────────────
   setInterval(()=>{
-    if(!myIP||!myVisual)return;
-    db.from('players').update({pos_x:ST.pos.x,pos_y:ST.pos.y,pos_z:ST.pos.z,facing:ST.facing,anim:getMyAnim(),last_seen:new Date().toISOString()}).eq('ip',myIP);
-  },150);
-
-  // Stale cleanup every 8s
-  setInterval(()=>{
-    const now=Date.now(),stale=[];
-    remotes.forEach((rp,ip)=>{if(now-rp.lastSeen>45000)stale.push(ip);});
+    const now=Date.now(), stale=[];
+    remotes.forEach((rp,ip)=>{ if(now-rp.lastSeen>60000) stale.push(ip); });
     stale.forEach(removeRemote);
-  },8000);
+  }, 10000);
 
-  // Cleanup on unload
-  addEventListener('beforeunload',()=>{try{db.from('players').update({last_seen:new Date(0).toISOString()}).eq('ip',myIP);}catch{}});
+  // ── Mark offline on tab close ──────────────────
+  addEventListener('beforeunload', ()=>{
+    navigator.sendBeacon(`${SUPABASE_URL}/rest/v1/players?ip=eq.${encodeURIComponent(myIP)}`,
+      new Blob([JSON.stringify({last_seen:'2000-01-01T00:00:00Z'})],{type:'application/json'}));
+  });
+
+  console.log('[init] Supabase fully initialized ✓');
 }
 
 // ═════════════════════════════════════════
