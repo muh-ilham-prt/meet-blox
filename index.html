@@ -93,7 +93,7 @@
         <div class="flex items-center gap-2"><span class="bg-gray-700 text-white px-1.5 py-0.5 rounded font-bold">E</span><span class="text-gray-300">Wave</span></div>
         <div class="flex items-center gap-2"><span class="bg-gray-700 text-white px-1.5 py-0.5 rounded font-bold">R</span><span class="text-gray-300">Dance</span></div>
         <div class="flex items-center gap-2"><span class="bg-gray-700 text-white px-1.5 py-0.5 rounded font-bold">F</span><span class="text-gray-300">Sit</span></div>
-        <div class="flex items-center gap-2"><span class="bg-gray-700 text-white px-1.5 py-0.5 rounded font-bold">G</span><span class="text-gray-300">Ragdoll</span></div>
+        <div class="flex items-center gap-2"><span class="bg-yellow-600 text-black px-1.5 py-0.5 rounded font-bold">Q</span><span class="text-yellow-200 font-bold">Grab / Throw</span></div>
         <p class="text-gray-500 pt-1">🖱 Drag orbit · Scroll zoom</p>
       </div>
     </div>
@@ -121,7 +121,64 @@
     <p class="text-center text-gray-600 text-xs mt-1">Enter to submit · Click input to pause controls</p>
   </div>
 
-  <!-- ══ BOTTOM RIGHT: CUSTOMIZE ══ -->
+  <!-- ══ MOBILE CONTROLS (touch devices only) ══ -->
+  <div id="mobile-wrap" class="hidden absolute inset-0 z-30 pointer-events-none">
+
+    <!-- LEFT: Run toggle + Virtual joystick -->
+    <div class="absolute bottom-10 left-6 flex flex-col items-center gap-3 pointer-events-auto">
+
+      <!-- Run toggle button -->
+      <button id="btn-run-mobile"
+        class="px-5 py-2 rounded-full text-sm font-black border-2 border-white/30 bg-white/15 text-white/70 transition-all active:scale-95 select-none">
+        🏃 Run
+      </button>
+
+      <!-- Joystick outer ring -->
+      <div id="joy-outer"
+        class="w-36 h-36 rounded-full bg-white/10 border-2 border-white/25 relative">
+        <!-- Crosshair lines -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-full h-px bg-white/15"></div>
+        </div>
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="h-full w-px bg-white/15"></div>
+        </div>
+        <!-- Center dot -->
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-3 h-3 rounded-full bg-white/25"></div>
+        </div>
+        <!-- Knob (positioned by JS) -->
+        <div id="joy-knob"
+          class="w-16 h-16 rounded-full bg-white/35 border-2 border-white/65 absolute shadow-xl">
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Action buttons 2×2 grid -->
+    <div class="absolute bottom-10 right-6 grid grid-cols-2 gap-3 pointer-events-auto">
+      <button id="m-wave"
+        class="w-[72px] h-[72px] rounded-2xl bg-yellow-500/25 border-2 border-yellow-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-yellow-500/60 transition-all select-none">
+        <span class="text-2xl leading-none">👋</span>
+        <span class="text-xs font-bold mt-0.5">Wave</span>
+      </button>
+      <button id="m-sit"
+        class="w-[72px] h-[72px] rounded-2xl bg-teal-500/25 border-2 border-teal-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-teal-500/60 transition-all select-none">
+        <span class="text-2xl leading-none">🪑</span>
+        <span class="text-xs font-bold mt-0.5">Sit</span>
+      </button>
+      <button id="m-grab"
+        class="w-[72px] h-[72px] rounded-2xl bg-orange-500/25 border-2 border-orange-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-orange-500/60 transition-all select-none">
+        <span id="m-grab-icon" class="text-2xl leading-none">🤚</span>
+        <span id="m-grab-lbl" class="text-xs font-bold mt-0.5">Grab</span>
+      </button>
+      <button id="m-sjump"
+        class="w-[72px] h-[72px] rounded-2xl bg-purple-500/25 border-2 border-purple-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-purple-500/60 transition-all select-none">
+        <span class="text-2xl leading-none">🚀</span>
+        <span class="text-xs font-bold mt-0.5">S.Jump</span>
+      </button>
+    </div>
+
+  </div>
   <button id="btn-cust" class="absolute bottom-4 right-4 z-10 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-sm rounded-xl px-4 py-2.5 border border-blue-400 transition-all">🎨 Customize</button>
   <div id="panel-cust" class="absolute bottom-16 right-4 z-10 hidden bg-gray-900/95 backdrop-blur border border-gray-700 rounded-2xl p-4 w-52">
     <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-0.5">✨ Customize</p>
@@ -274,6 +331,151 @@ for(let i=-13;i<13;i++)for(let j=-13;j<13;j++){const t=new THREE.Mesh(tG,tM[(i+j
 const sB=[];for(let i=0;i<500;i++)sB.push((Math.random()-.5)*130,Math.random()*38+8,(Math.random()-.5)*130);
 const sG=new THREE.BufferGeometry();sG.setAttribute('position',new THREE.Float32BufferAttribute(sB,3));
 scene.add(new THREE.Points(sG,new THREE.PointsMaterial({color:0xffffff,size:.13})));
+
+// ═════════════════════════════════════════
+//  WORLD PROPS (chair, sword, hammer, duct tape)
+// ═════════════════════════════════════════
+// Each prop: { group, labelMesh, name, heldBy, velX, velY, velZ, ry, angVel, grounded, baseX, baseZ }
+const propList = [];
+const GRAB_RANGE   = 2.8;  // max distance to grab
+const THROW_SPEED  = 14;   // throw velocity magnitude
+const PROP_GRAVITY = 24;   // prop falling gravity
+
+function box(w,h,d,color,rx,ry,rz){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color}));
+  if(rx)m.rotation.x=rx; if(ry)m.rotation.y=ry; if(rz)m.rotation.z=rz;
+  m.castShadow=true; return m;
+}
+function addBox(g,w,h,d,color,ox,oy,oz,rx,ry,rz){
+  const m=box(w,h,d,color,rx,ry,rz); m.position.set(ox,oy,oz); g.add(m);
+}
+
+// ── Label canvas factory ──────────────────
+function makePropLabel(name){
+  const cv=document.createElement('canvas'); cv.width=256; cv.height=64;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='rgba(5,5,20,0.88)';
+  ctx.beginPath(); ctx.roundRect(4,4,248,56,14); ctx.fill();
+  ctx.strokeStyle='rgba(150,180,255,0.55)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.roundRect(4,4,248,56,14); ctx.stroke();
+  ctx.fillStyle='#e8f0ff'; ctx.font='bold 22px "Segoe UI",Arial,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(name,128,34);
+  const tex=new THREE.CanvasTexture(cv);
+  const mesh=new THREE.Mesh(
+    new THREE.PlaneGeometry(2.2,.56),
+    new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide})
+  );
+  return mesh;
+}
+
+function makeProp(name, buildFn, wx, wz){
+  const g=new THREE.Group(); scene.add(g);
+  g.position.set(wx, 0, wz);
+  buildFn(g);
+
+  const lm = makePropLabel(name);
+  scene.add(lm);
+
+  const prop = {
+    group:g, labelMesh:lm, name,
+    heldBy: null,   // 'player' | null  (extensible for remote players later)
+    velX:0, velY:0, velZ:0,
+    ry:0, angVel:0,
+    grounded:true,
+    baseX:wx, baseZ:wz,
+  };
+  propList.push(prop);
+  return prop;
+}
+
+// ─────────────────────────────────────────
+//  🪑  CHAIR  (x=-6, z=10)
+// ─────────────────────────────────────────
+makeProp('Chair', g=>{
+  const W=0x8B4513, DW=0x6B3410; // wood, dark wood
+  // 4 legs
+  [[-0.45,0,-0.45],[0.45,0,-0.45],[-0.45,0,0.35],[0.45,0,0.35]].forEach(([x,,z])=>{
+    addBox(g,.1,.6,.1,W, x,.3,z);
+  });
+  // Seat
+  addBox(g,1.1,.12,1.0,W, 0,.65,-.05);
+  // Back rest vertical bars
+  [-0.38,0,0.38].forEach(x=> addBox(g,.1,.95,.08,W, x,1.15,-.45));
+  // Back rest horizontal rail
+  addBox(g,1.1,.12,.08,DW, 0,1.55,-.45);
+}, -6, 10);
+
+// ─────────────────────────────────────────
+//  ⚔️  SWORD  (x=0, z=10)
+// ─────────────────────────────────────────
+makeProp('Sword', g=>{
+  const SILVER=0xC8C8D0, GOLD=0xFFCC33, DARK=0x5C3A1E;
+  // Blade (tilted 12° for style)
+  const blade=new THREE.Mesh(new THREE.BoxGeometry(.09,1.55,.03),new THREE.MeshLambertMaterial({color:SILVER}));
+  blade.position.set(0,1.2,0); blade.rotation.z=0.21; blade.castShadow=true; g.add(blade);
+  // Blade edge highlight
+  const edge=new THREE.Mesh(new THREE.BoxGeometry(.02,1.55,.025),new THREE.MeshLambertMaterial({color:0xffffff}));
+  edge.position.set(.035,1.2,0); edge.rotation.z=0.21; g.add(edge);
+  // Crossguard
+  const cg=new THREE.Mesh(new THREE.BoxGeometry(.6,.1,.1),new THREE.MeshLambertMaterial({color:GOLD}));
+  cg.position.set(.1,.43,0); cg.rotation.z=0.21; cg.castShadow=true; g.add(cg);
+  // Handle / grip
+  addBox(g,.08,.42,.08,DARK, .055,.22,0, 0,0,0.21);
+  // Pommel
+  const pom=new THREE.Mesh(new THREE.BoxGeometry(.15,.15,.15),new THREE.MeshLambertMaterial({color:GOLD}));
+  pom.position.set(.025,.02,0); pom.rotation.z=0.21; g.add(pom);
+}, 0, 10);
+
+// ─────────────────────────────────────────
+//  🔨  HAMMER  (x=6, z=10)
+// ─────────────────────────────────────────
+makeProp('Hammer', g=>{
+  const WOOD=0x7B4E2D, METAL=0x555A5F, METAL_D=0x333840;
+  // Handle
+  addBox(g,.13,1.1,.13,WOOD, 0,.55,0);
+  // Grip wrap stripes
+  [.2,.45,.7].forEach(y=> addBox(g,.155,.06,.155,0x3a2010, 0,y,0));
+  // Head body
+  addBox(g,.52,.38,.36,METAL, .06,1.18,0);
+  // Head face (striking face, lighter)
+  addBox(g,.06,.32,.30,0x8a9098, .33,1.18,0);
+  // Head back (peen)
+  addBox(g,.12,.22,.20,METAL_D, -.22,1.18,0);
+  // Edge lines on head
+  addBox(g,.54,.04,.38,METAL_D, .06,1.37,0);
+  addBox(g,.54,.04,.38,METAL_D, .06,.99,0);
+}, 6, 10);
+
+// ─────────────────────────────────────────
+//  🖤  BLACK DUCT TAPE  (x=-12, z=10)
+// ─────────────────────────────────────────
+makeProp('Duct Tape', g=>{
+  const BLACK=0x111111, DKGRAY=0x222222, SILVER=0x888890;
+  // Outer roll body — built from arc segments (Roblox blocky cylinder illusion)
+  const R=0.42, segments=10;
+  for(let i=0;i<segments;i++){
+    const a=(i/segments)*Math.PI*2, na=((i+1)/segments)*Math.PI*2;
+    const ma=(a+na)/2, w=2*R*Math.sin(Math.PI/segments)+.04;
+    const rm=new THREE.Mesh(new THREE.BoxGeometry(w,.38,.10),new THREE.MeshLambertMaterial({color:i%2===0?BLACK:DKGRAY}));
+    rm.position.set(Math.cos(ma)*R,.58,Math.sin(ma)*R);
+    rm.rotation.y=-ma; rm.castShadow=true; g.add(rm);
+  }
+  // Inner hub (cardboard tube)
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.42,12),new THREE.MeshLambertMaterial({color:0x8B6914}));
+  hub.position.set(0,.58,0); hub.castShadow=true; g.add(hub);
+  // Top disc
+  const top=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.04,12),new THREE.MeshLambertMaterial({color:BLACK}));
+  top.position.set(0,.79,0); g.add(top);
+  // Bottom disc
+  const bot=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.04,12),new THREE.MeshLambertMaterial({color:BLACK}));
+  bot.position.set(0,.37,0); g.add(bot);
+  // Tape tail hanging off roll
+  const tail=new THREE.Mesh(new THREE.BoxGeometry(.08,.22,.56),new THREE.MeshLambertMaterial({color:DKGRAY}));
+  tail.position.set(.0,.3,.42); g.add(tail);
+  // Silver edge strip
+  const strip=new THREE.Mesh(new THREE.BoxGeometry(.86,.04,.04),new THREE.MeshLambertMaterial({color:SILVER}));
+  strip.position.set(0,.80,0); g.add(strip);
+}, -12, 10);
 
 // ═════════════════════════════════════════
 //  SURFACE QUERY
@@ -453,13 +655,15 @@ addEventListener('keydown',e=>{
   if(inputFocused)return;if(keys[e.code])return;keys[e.code]=true;
   switch(e.code){
     case 'Space':
+      // Fix: no jump during dance or sit
+      if(ST.specialAnim==='dance'||ST.specialAnim==='sit') break;
       if(ST.grounded){ST.velY=JUMPV;ST.grounded=false;ST.canDoubleJump=true;ST.isDoubleJump=false;}
       else if(ST.canDoubleJump){ST.velY=JUMPV2;ST.canDoubleJump=false;ST.isDoubleJump=true;}
       e.preventDefault();break;
     case 'KeyE':ST.specialAnim=ST.specialAnim==='wave' ?null:'wave'; ST.specialTime=0;break;
     case 'KeyR':ST.specialAnim=ST.specialAnim==='dance'?null:'dance';ST.specialTime=0;break;
     case 'KeyF':ST.specialAnim=ST.specialAnim==='sit'  ?null:'sit';  ST.specialTime=0;break;
-    case 'KeyG':ST.specialAnim=ST.specialAnim==='fall' ?null:'fall'; ST.specialTime=0;break;
+    case 'KeyQ': grabProp(); break;
   }
 });
 addEventListener('keyup',e=>{delete keys[e.code];});
@@ -489,6 +693,168 @@ function setColor(part,hex){
 }
 
 // ═════════════════════════════════════════
+//  GRAB / THROW SYSTEM
+// ═════════════════════════════════════════
+let heldProp = null; // reference to the currently held prop object
+
+function nearestFreeProp(){
+  let best=null, bestDist=Infinity;
+  for(const p of propList){
+    if(p.heldBy) continue;
+    const dx=ST.pos.x-p.group.position.x;
+    const dz=ST.pos.z-p.group.position.z;
+    const dist=Math.sqrt(dx*dx+dz*dz);
+    if(dist<GRAB_RANGE && dist<bestDist){ best=p; bestDist=dist; }
+  }
+  return best;
+}
+
+function grabProp(){
+  if(heldProp){ throwProp(); return; } // toggle: grab again = throw
+  const p=nearestFreeProp(); if(!p) return;
+  heldProp=p;
+  p.heldBy='player';
+  p.velX=p.velY=p.velZ=0;
+  p.angVel=0;
+  p.labelMesh.visible=false; // hide label while held
+  showHint('Press Q to throw!', 1800);
+}
+
+function throwProp(){
+  if(!heldProp) return;
+  const p=heldProp;
+  // Throw in the direction the character is facing with upward arc
+  const throwDir = ST.facing;
+  p.velX = Math.sin(throwDir) * THROW_SPEED;
+  p.velZ = Math.cos(throwDir) * THROW_SPEED;
+  p.velY = 7;          // upward arc
+  p.angVel = 4.5;      // spin on throw
+  p.grounded = false;
+  p.heldBy = null;
+  heldProp = null;
+  showHint('', 0);
+}
+
+// ── Prop physics update ────────────────────
+function updateProps(dt){
+  for(const p of propList){
+
+    // ── HELD: snap to character's actual right hand world position ──
+    if(p.heldBy==='player' && myVisual){
+      // Right shoulder pivot is at x=+0.92, y=3.10 in character local space.
+      // Hand tip (bottom of hand mesh) is 1.475 units below pivot = y=1.625 from feet.
+      // We compute the world position of the right hand using the character's facing angle.
+      const cos = Math.cos(ST.facing), sin = Math.sin(ST.facing);
+      // Shoulder offset in character local: (+0.92, 3.10, 0)
+      // Arm hangs down when relaxed, but during grab RA.rotation.z stays 0 → hand at y=1.625
+      // We add a forward reach so the prop appears in front of the hand
+      const shldLocalX =  0.92; // right shoulder local x
+      const shldLocalY =  3.10; // shoulder height
+      const handLocalY =  1.625; // hand tip below shoulder
+      const reachZ     =  0.55;  // forward reach (local z = in front of character)
+
+      // Rotate local offsets by character facing
+      const wx = ST.pos.x + cos * shldLocalX  + sin * reachZ;
+      const wz = ST.pos.z - sin * shldLocalX  + cos * reachZ;
+      const wy = ST.pos.y + handLocalY;
+
+      p.group.position.set(wx, wy, wz);
+      p.ry += dt * 1.8; // gentle spin while held
+      p.group.rotation.y = p.ry;
+      p.labelMesh.visible = false;
+      continue;
+    }
+
+    // ── FLYING / BOUNCING ──────────────────────────────────
+    if(!p.grounded){
+      p.velY -= PROP_GRAVITY*dt;
+      p.group.position.x += p.velX*dt;
+      p.group.position.y += p.velY*dt;
+      p.group.position.z += p.velZ*dt;
+      p.ry += p.angVel*dt;
+      p.group.rotation.x += p.angVel*0.6*dt;
+      p.group.rotation.y = p.ry;
+
+      // Fix 3: hit detection — check if flying prop intersects MY character
+      if(myVisual && !p._hitCooldown){
+        const dx = p.group.position.x - ST.pos.x;
+        const dz = p.group.position.z - ST.pos.z;
+        const dy = p.group.position.y - (ST.pos.y + 2.2); // aim at torso height
+        const dist2 = dx*dx + dz*dz;
+        if(dist2 < 1.5 && Math.abs(dy) < 2.2){ // hit radius 1.5 units, torso height window
+          // Knockback: push character in prop's travel direction
+          const speed = Math.sqrt(p.velX*p.velX+p.velZ*p.velZ);
+          if(speed > 2){
+            ST.pos.x += (p.velX/speed)*1.8;
+            ST.pos.z += (p.velZ/speed)*1.8;
+            ST.velY   = 4.5; // small upward pop
+            ST.grounded = false;
+            ST.specialAnim = null; // cancel any emote
+            // Brief stun: force stumble animation via a temporary flag
+            ST._stunUntil = clock.getElapsedTime() + 0.85;
+            p._hitCooldown = true;
+            setTimeout(()=>p._hitCooldown=false, 1200);
+          }
+        }
+      }
+
+      const surf = getSurface(p.group.position.x, p.group.position.z);
+      if(p.group.position.y <= surf){
+        p.group.position.y = surf;
+        p.velY *= -0.35;
+        p.velX *= 0.65;
+        p.velZ *= 0.65;
+        p.angVel *= 0.55;
+        if(Math.abs(p.velY)<0.5 && Math.sqrt(p.velX**2+p.velZ**2)<0.4){
+          p.velX=p.velY=p.velZ=p.angVel=0;
+          p.grounded=true;
+          p.labelMesh.visible=true;
+        }
+      }
+      if(p.group.position.x>20){p.group.position.x=20;p.velX*=-0.6;}
+      if(p.group.position.x<-20){p.group.position.x=-20;p.velX*=-0.6;}
+      if(p.group.position.z>20){p.group.position.z=20;p.velZ*=-0.6;}
+      if(p.group.position.z<-20){p.group.position.z=-20;p.velZ*=-0.6;}
+    }
+
+    // ── RESTING: update label billboard position ───────────
+    if(p.grounded && !p.heldBy){
+      const lx=p.group.position.x, lz=p.group.position.z;
+      const surf=getSurface(lx,lz);
+      p.labelMesh.position.set(lx, surf+0.18, lz);
+      p.labelMesh.lookAt(camera.position);
+    }
+  }
+}
+
+// ── HUD grab hint (bottom-left small toast) ─
+let _hintTimer=null;
+function showHint(msg, dur){
+  let el=document.getElementById('grab-hint');
+  if(!el){ el=document.createElement('div'); el.id='grab-hint';
+    el.className='absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-gray-900/90 backdrop-blur border border-blue-700 text-blue-200 text-xs font-bold px-4 py-2 rounded-xl pointer-events-none transition-opacity duration-300';
+    document.querySelector('.relative').appendChild(el); }
+  if(!msg){el.style.opacity='0';return;}
+  el.textContent=msg; el.style.opacity='1';
+  clearTimeout(_hintTimer);
+  if(dur>0) _hintTimer=setTimeout(()=>el.style.opacity='0',dur);
+}
+
+function checkNearHint(){
+  if(heldProp){
+    showHint('🤜 [Q] Throw',0);
+    const gi=document.getElementById('m-grab-icon'), gl=document.getElementById('m-grab-lbl');
+    if(gi){gi.textContent='🤜';} if(gl){gl.textContent='Throw';}
+    return;
+  }
+  const near=nearestFreeProp();
+  const gi=document.getElementById('m-grab-icon'), gl=document.getElementById('m-grab-lbl');
+  if(gi){gi.textContent='🤚';} if(gl){gl.textContent='Grab';}
+  if(near){showHint(`🤚 [Q] Grab ${near.name}`,0);}
+  else{showHint('',0);}
+}
+
+// ═════════════════════════════════════════
 //  PHYSICS
 // ═════════════════════════════════════════
 function updatePhysics(dt){
@@ -498,8 +864,14 @@ function updatePhysics(dt){
     if(keys['KeyW']||keys['ArrowUp'])mvF+=1;if(keys['KeyS']||keys['ArrowDown'])mvF-=1;
     if(keys['KeyD']||keys['ArrowRight'])mvR+=1;if(keys['KeyA']||keys['ArrowLeft'])mvR-=1;
   }
+  // Mix in virtual joystick: screen-Y-down = game-backward, so negate joystickY
+  mvF += -joystickY;
+  mvR += joystickX;
+  // Clamp combined input to [-1,1] per axis
+  mvF = Math.max(-1, Math.min(1, mvF));
+  mvR = Math.max(-1, Math.min(1, mvR));
   ST.isMoving=mvF!==0||mvR!==0;
-  ST.isRunning=ST.isMoving&&!!(keys['ShiftLeft']||keys['ShiftRight']);
+  ST.isRunning=ST.isMoving&&(!!(keys['ShiftLeft']||keys['ShiftRight'])||joystickRunMode);
   if(ST.isMoving&&ST.specialAnim!=='fall')ST.specialAnim=null;
   if(!ST.grounded)ST.velY-=GRAV*dt;
   if(ST.isMoving&&ST.specialAnim!=='sit'&&ST.specialAnim!=='fall'){
@@ -527,10 +899,23 @@ function updatePhysics(dt){
 // ═════════════════════════════════════════
 //  ANIMATION
 // ═════════════════════════════════════════
-const AINFO={idle:{i:'😐',l:'Idle'},walk:{i:'🚶',l:'Walk'},run:{i:'🏃',l:'Run'},jump:{i:'⬆️',l:'Jump'},wave:{i:'👋',l:'Wave'},dance:{i:'💃',l:'Dance'},sit:{i:'🪑',l:'Sit'},fall:{i:'😵',l:'Ragdoll'}};
-function getMyAnim(){if(ST.specialAnim)return ST.specialAnim;if(!ST.grounded)return'jump';if(ST.isRunning)return'run';if(ST.isMoving)return'walk';return'idle';}
+const AINFO={idle:{i:'😐',l:'Idle'},walk:{i:'🚶',l:'Walk'},run:{i:'🏃',l:'Run'},jump:{i:'⬆️',l:'Jump'},wave:{i:'👋',l:'Wave'},dance:{i:'💃',l:'Dance'},sit:{i:'🪑',l:'Sit'},stun:{i:'💥',l:'Stunned!'}};
 
-function resetPose(v){v.LA.rotation.set(0,0,0);v.RA.rotation.set(0,0,0);v.LL.rotation.set(0,0,0);v.RL.rotation.set(0,0,0);v.HG.rotation.set(0,0,0);v.g.rotation.set(0,0,0);}
+function getMyAnim(){
+  // Stun override: hit by thrown prop
+  if(ST._stunUntil && clock.getElapsedTime() < ST._stunUntil) return 'stun';
+  if(ST.specialAnim)return ST.specialAnim;
+  if(!ST.grounded)return'jump';
+  if(ST.isRunning)return'run';
+  if(ST.isMoving)return'walk';
+  return'idle';
+}
+
+function resetPose(v){
+  v.LA.rotation.set(0,0,0); v.RA.rotation.set(0,0,0);
+  v.LL.rotation.set(0,0,0); v.RL.rotation.set(0,0,0);
+  v.HG.rotation.set(0,0,0); v.g.rotation.set(0,0,0); // clears stun body-sway z too
+}
 
 function applyAnim(vis,pos,facing,anim,sTime,isDJ,t){
   resetPose(vis);
@@ -544,18 +929,35 @@ function applyAnim(vis,pos,facing,anim,sTime,isDJ,t){
     vis.LA.rotation.z=.07;vis.RA.rotation.z=-.07;vis.HG.rotation.y=Math.sin(t*sp*.5)*.08;
     vis.g.position.y=pos.y+Math.abs(Math.sin(t*sp))*.09;
   }else if(anim==='run'){
-    const sw=1,sp=6.5;vis.LA.rotation.x=Math.sin(t*sp)*sw;vis.RA.rotation.x=-Math.sin(t*sp)*sw;
-    vis.LA.rotation.z=.18;vis.RA.rotation.z=-.18;vis.LL.rotation.x=-Math.sin(t*sp)*sw;vis.RL.rotation.x=Math.sin(t*sp)*sw;
-    vis.g.position.y=pos.y+Math.abs(Math.sin(t*sp))*.22;vis.g.rotation.x=-.18;vis.HG.rotation.x=.12;
+    // Fix 4: no arm z-splay, slight lean only, head neutral
+    const sw=1,sp=6.5;
+    vis.LA.rotation.x= Math.sin(t*sp)*sw; vis.RA.rotation.x=-Math.sin(t*sp)*sw;
+    vis.LA.rotation.z=0; vis.RA.rotation.z=0;
+    vis.LL.rotation.x=-Math.sin(t*sp)*sw; vis.RL.rotation.x= Math.sin(t*sp)*sw;
+    vis.g.position.y=pos.y+Math.abs(Math.sin(t*sp))*.22;
+    vis.g.rotation.x=-0.08; // reduced lean — character stays upright
   }else if(anim==='jump'){
-    const ph=Math.max(0,Math.min(1,(pos.y-getSurface(pos.x,pos.z))*.4)),uf=isDJ?1.5:1;
-    vis.LA.rotation.z=(ph*.6+.14)*uf;vis.RA.rotation.z=-(ph*.6+.14)*uf;
-    vis.LA.rotation.x=-ph*.4;vis.RA.rotation.x=-ph*.4;vis.LL.rotation.x=-ph*.5;vis.RL.rotation.x=-ph*.5;
-    vis.HG.rotation.x=-ph*.2;if(isDJ){vis.LL.rotation.z=.35;vis.RL.rotation.z=-.35;}
+    const ph=Math.max(0,Math.min(1,(pos.y-getSurface(pos.x,pos.z))*.4));
+    const uf=isDJ?1.4:1;
+    vis.LA.rotation.z=(ph*.6+.14)*uf; vis.RA.rotation.z=-(ph*.6+.14)*uf;
+    vis.LA.rotation.x=-ph*.4; vis.RA.rotation.x=-ph*.4;
+    // Fix 5: super jump — tuck legs straight up, no z-splay
+    if(isDJ){
+      vis.LL.rotation.x=-0.95; vis.RL.rotation.x=-0.95; // legs tucked straight up
+      vis.LL.rotation.z=0;     vis.RL.rotation.z=0;     // NO splaying
+    }else{
+      vis.LL.rotation.x=-ph*.5; vis.RL.rotation.x=-ph*.5;
+    }
+    vis.HG.rotation.x=-ph*.2;
     vis.g.position.y=pos.y;
   }else if(anim==='wave'){
-    vis.RA.rotation.z=-(Math.PI/2.1+Math.sin(s*5.5)*.28);vis.RA.rotation.x=Math.sin(s*5)*.18;
-    vis.LA.rotation.z=.08;vis.HG.rotation.y=Math.sin(s*1.5)*.2;vis.g.position.y=pos.y+Math.sin(s*2)*.04;
+    // Fix 1: arm straight UP (rotation.z ≈ PI puts arm vertical),
+    // wave = oscillate rotation.z around that "up" position → left-right motion above head
+    vis.RA.rotation.z = Math.PI * 0.88 + Math.sin(s*4)*0.38; // up + wave side-to-side
+    vis.RA.rotation.x = 0.12;                                  // slight forward so arm is in front of head
+    vis.LA.rotation.z = 0.15;                                  // left arm neutral/relaxed
+    vis.HG.rotation.y = Math.sin(s*2)*0.14;                   // head tracks wave rhythm
+    vis.g.position.y  = pos.y + Math.sin(s*2)*.04;
   }else if(anim==='dance'){
     const sp=5.5;vis.LA.rotation.x=Math.sin(s*sp)*1.15;vis.RA.rotation.x=-Math.sin(s*sp)*1.15;
     vis.LA.rotation.z=Math.sin(s*sp*.5)*.55+.35;vis.RA.rotation.z=-(Math.sin(s*sp*.5)*.55+.35);
@@ -565,19 +967,29 @@ function applyAnim(vis,pos,facing,anim,sTime,isDJ,t){
   }else if(anim==='sit'){
     vis.LL.rotation.x=-Math.PI/2;vis.RL.rotation.x=-Math.PI/2;
     vis.LA.rotation.z=.5;vis.RA.rotation.z=-.5;vis.HG.rotation.y=Math.sin(s*.8)*.12;vis.g.position.y=pos.y-1.55;
-  }else if(anim==='fall'){
-    vis.g.rotation.x=-Math.PI/2+Math.sin(s*.4)*.03;vis.g.position.y=pos.y+.42;
-    vis.HG.rotation.x=-.25;vis.LA.rotation.z=1;vis.RA.rotation.z=-1;vis.LL.rotation.x=.3;vis.RL.rotation.x=-.3;
+  }else if(anim==='stun'){
+    // Fix 3: wobbly stumble pose — arms splayed, legs bent, head lolling
+    vis.LA.rotation.z =  Math.PI*0.55 + Math.sin(s*8)*0.25;
+    vis.RA.rotation.z = -Math.PI*0.55 - Math.sin(s*8)*0.25;
+    vis.LA.rotation.x =  Math.sin(s*7)*0.3;
+    vis.RA.rotation.x = -Math.sin(s*7)*0.3;
+    vis.LL.rotation.x =  0.45 + Math.sin(s*9)*0.2;
+    vis.RL.rotation.x = -0.3  + Math.sin(s*9+1)*0.2;
+    vis.HG.rotation.z =  Math.sin(s*6)*0.35;
+    vis.HG.rotation.y =  Math.sin(s*5)*0.2;
+    vis.g.rotation.z  =  Math.sin(s*7)*0.18; // whole body sway
+    vis.g.position.y  = pos.y + Math.sin(s*6)*0.06;
   }else{vis.g.position.y=pos.y;}
   vis.g.position.x=pos.x;vis.g.position.z=pos.z;
   vis.g.rotation.y=anim==='dance'?facing+Math.sin(s*2.2)*.35:facing;
-  if(anim!=='fall'&&anim!=='run')vis.g.rotation.x=0;
+  // Only apply lean for run; everything else stays upright
+  if(anim!=='run') vis.g.rotation.x=0;
 }
 
 // ═════════════════════════════════════════
 //  CONVERSATION + NOTIFICATIONS
 // ═════════════════════════════════════════
-let activeConvIP=null,notifInt=null,notifSec=15,pendingReqId=null,pendingFromIP=null;
+let activeConvIP=null,notifInt=null,notifSec=15,pendingReqId=null,pendingFromIP=null,pendingToIP=null;
 const notifEl=document.getElementById('notif');
 const notifBar=document.getElementById('notif-bar');
 const notifTimerEl=document.getElementById('notif-timer');
@@ -622,14 +1034,25 @@ document.getElementById('notif-decline').addEventListener('click',()=>{clearInte
 async function requestConvWith(ip){
   if(!db||!myIP){addSysMsg('Multiplayer not configured.');return;}
   if(activeConvIP){addSysMsg('Already in a conversation. End it first.');return;}
-  const {data}=await db.from('conv_requests').insert({from_ip:myIP,to_ip:ip,status:'pending'}).select().single();
-  if(data)addSysMsg(`Request sent to ${remotes.get(ip)?.name||ip}…`);
+  if(pendingToIP){addSysMsg('Already waiting for a response.');return;}
+  const {data,error}=await db.from('conv_requests').insert({from_ip:myIP,to_ip:ip,status:'pending'}).select().single();
+  if(error){addSysMsg('Failed to send request.');return;}
+  if(data){
+    pendingToIP=ip;
+    const targetName=remotes.get(ip)?.name||ip;
+    addSysMsg(`⏳ Waiting for ${targetName} to accept…`);
+    // Update chat badge to show waiting state
+    document.getElementById('chat-badge').textContent='⏳ Waiting…';
+    document.getElementById('chat-badge').className='text-xs bg-yellow-900 text-yellow-300 px-1.5 py-0.5 rounded-full font-bold';
+    refreshNearby(); // re-render nearby list to show waiting state
+  }
 }
 async function endConv(){
-  activeConvIP=null;
+  activeConvIP=null; pendingToIP=null;
   document.getElementById('chat-badge').textContent='No conv.';
   document.getElementById('chat-badge').className='text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded-full';
   addSysMsg('Conversation ended.');
+  refreshNearby();
 }
 
 // ═════════════════════════════════════════
@@ -686,7 +1109,8 @@ function refreshNearby(){
     const inRange=dist<CONV_RANGE;
     let btn='';
     if(inConv)btn=`<button onclick="endConv()" class="text-xs bg-red-900 hover:bg-red-800 text-red-200 px-1.5 py-0.5 rounded-lg transition-all">End</button>`;
-    else if(inRange)btn=`<button onclick="requestConvWith('${ip}')" class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-1.5 py-0.5 rounded-lg transition-all">Chat</button>`;
+    else if(pendingToIP===ip)btn=`<span class="text-yellow-400 text-xs font-bold">⏳ Waiting…</span>`;
+    else if(inRange&&!pendingToIP)btn=`<button onclick="requestConvWith('${ip}')" class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-1.5 py-0.5 rounded-lg transition-all">Chat</button>`;
     else btn=`<span class="text-gray-600 text-xs">${dist.toFixed(1)}m</span>`;
     d.innerHTML=`<span class="text-gray-300 text-xs truncate max-w-24">${name}</span>${btn}`;
     list.appendChild(d);
@@ -775,11 +1199,18 @@ async function initSupabase(){
     .on('postgres_changes',{event:'UPDATE',schema:'public',table:'conv_requests'}, pl=>{
       if(pl.new.from_ip !== myIP) return;
       if(pl.new.status==='accepted'){
-        activeConvIP = pl.new.to_ip;
+        activeConvIP = pl.new.to_ip; pendingToIP = null;
         document.getElementById('chat-badge').textContent = '● Active';
         document.getElementById('chat-badge').className = 'text-xs bg-emerald-800 text-emerald-300 px-1.5 py-0.5 rounded-full font-bold';
         addSysMsg(`${remotes.get(pl.new.to_ip)?.name||pl.new.to_ip} accepted! 🎉`);
-      } else if(pl.new.status==='declined') addSysMsg('Request declined.');
+        refreshNearby();
+      } else if(pl.new.status==='declined'){
+        pendingToIP = null;
+        document.getElementById('chat-badge').textContent = 'No conv.';
+        document.getElementById('chat-badge').className = 'text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded-full';
+        addSysMsg('❌ Request declined.');
+        refreshNearby();
+      }
     })
     .subscribe(s => console.log('[rt] conv_requests channel:', s));
 
@@ -879,7 +1310,7 @@ function tick(){
     const jh=Math.max(0,ST.pos.y-surf),bs=Math.max(.25,1-jh*.14);
     myVisual.shadow.scale.set(bs,bs,bs);myVisual.shadow.material.opacity=.22*bs;
     if(myVisual.bMesh.visible){myVisual.bMesh.position.set(ST.pos.x,ST.pos.y+6.2,ST.pos.z);myVisual.bMesh.lookAt(camera.position);}
-    myVisual.nMesh.position.set(ST.pos.x,ST.pos.y+5.1,ST.pos.z);myVisual.nMesh.lookAt(camera.position);
+    myVisual.nMesh.position.set(ST.pos.x,ST.pos.y+6.5,ST.pos.z);myVisual.nMesh.lookAt(camera.position);
   }
 
   // Remotes
@@ -897,15 +1328,122 @@ function tick(){
     rp.vis.shadow.position.set(rp.vis.g.position.x,ss+.02,rp.vis.g.position.z);
     rp.vis.shadow.scale.set(1,1,1);rp.vis.shadow.material.opacity=.18;
     if(rp.vis.bMesh.visible){rp.vis.bMesh.position.set(rp.vis.g.position.x,rp.buf.y+6.2,rp.vis.g.position.z);rp.vis.bMesh.lookAt(camera.position);}
-    rp.vis.nMesh.position.set(rp.vis.g.position.x,rp.buf.y+5.1,rp.vis.g.position.z);rp.vis.nMesh.lookAt(camera.position);
+    rp.vis.nMesh.position.set(rp.vis.g.position.x,rp.buf.y+6.5,rp.vis.g.position.z);rp.vis.nMesh.lookAt(camera.position);
   });
 
   updateCamera();
+  // Props: physics + label billboard (handled inside updateProps)
+  updateProps(dt);
+  // Near-prop hint (throttled)
+  if(myVisual && t-lastNR>.25){ checkNearHint(); }
   if(t-lastNR>.5){lastNR=t;refreshNearby();}
   renderer.render(scene,camera);
 }
 
+// ═════════════════════════════════════════
+//  MOBILE CONTROLS SYSTEM
+// ═════════════════════════════════════════
+let joystickX = 0, joystickY = 0, joystickRunMode = false;
+const JOY_R   = 60; // joystick clamping radius in px (outer div = 144px → 72px, leave some margin)
+
+function initMobileControls(){
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if(!isTouch) return;
+
+  const wrap  = document.getElementById('mobile-wrap');
+  wrap.classList.remove('hidden');
+
+  const outer = document.getElementById('joy-outer');
+  const knob  = document.getElementById('joy-knob');
+
+  // Center knob via JS so we don't fight Tailwind
+  const resetKnob = () => {
+    knob.style.left      = '50%';
+    knob.style.top       = '50%';
+    knob.style.transform = 'translate(-50%, -50%)';
+  };
+  resetKnob();
+
+  let joyTouchId = null;
+
+  outer.addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation();
+    joyTouchId = e.changedTouches[0].identifier;
+  }, {passive:false});
+
+  outer.addEventListener('touchmove', e => {
+    e.preventDefault(); e.stopPropagation();
+    let touch = null;
+    for(const t of e.changedTouches){ if(t.identifier===joyTouchId){touch=t;break;} }
+    if(!touch) return;
+    const rect = outer.getBoundingClientRect();
+    let dx = touch.clientX - (rect.left + rect.width  / 2);
+    let dy = touch.clientY - (rect.top  + rect.height / 2);
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    if(dist > JOY_R){ dx = dx/dist*JOY_R; dy = dy/dist*JOY_R; }
+    joystickX =  dx / JOY_R;
+    joystickY =  dy / JOY_R; // updatePhysics negates this for forward
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  }, {passive:false});
+
+  ['touchend','touchcancel'].forEach(ev => outer.addEventListener(ev, e => {
+    e.preventDefault(); e.stopPropagation();
+    joystickX = joystickY = 0;
+    joyTouchId = null;
+    resetKnob();
+  }, {passive:false}));
+
+  // Run toggle
+  const runBtn = document.getElementById('btn-run-mobile');
+  runBtn.addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation();
+    joystickRunMode = !joystickRunMode;
+    if(joystickRunMode){
+      runBtn.className = 'px-5 py-2 rounded-full text-sm font-black border-2 border-orange-400 bg-orange-500/80 text-white transition-all active:scale-95 select-none';
+    } else {
+      runBtn.className = 'px-5 py-2 rounded-full text-sm font-black border-2 border-white/30 bg-white/15 text-white/70 transition-all active:scale-95 select-none';
+    }
+  }, {passive:false});
+
+  // Wave
+  document.getElementById('m-wave').addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation();
+    ST.specialAnim = ST.specialAnim==='wave' ? null : 'wave';
+    ST.specialTime = 0;
+  }, {passive:false});
+
+  // Sit
+  document.getElementById('m-sit').addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation();
+    ST.specialAnim = ST.specialAnim==='sit' ? null : 'sit';
+    ST.specialTime = 0;
+  }, {passive:false});
+
+  // Grab / Throw
+  document.getElementById('m-grab').addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation();
+    grabProp();
+    // Update button label
+    const icon = document.getElementById('m-grab-icon');
+    const lbl  = document.getElementById('m-grab-lbl');
+    if(heldProp){ icon.textContent='🤜'; lbl.textContent='Throw'; }
+    else        { icon.textContent='🤚'; lbl.textContent='Grab'; }
+  }, {passive:false});
+
+  // Super Jump
+  document.getElementById('m-sjump').addEventListener('touchstart', e => {
+    e.preventDefault(); e.stopPropagation();
+    if(ST.specialAnim==='dance' || ST.specialAnim==='sit') return;
+    if(ST.grounded){
+      ST.velY=JUMPV; ST.grounded=false; ST.canDoubleJump=true; ST.isDoubleJump=false;
+    } else if(ST.canDoubleJump){
+      ST.velY=JUMPV2; ST.canDoubleJump=false; ST.isDoubleJump=true;
+    }
+  }, {passive:false});
+}
+
 initSupabase();
+initMobileControls();
 tick();
 </script>
 </body>
