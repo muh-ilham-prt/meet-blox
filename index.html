@@ -39,7 +39,7 @@
   </div>
 
   <!-- ══ LEFT COLUMN ══ -->
-  <div id="desktop-left" class="absolute top-4 left-4 z-10 flex flex-col gap-3">
+  <div class="absolute top-4 left-4 z-10 flex flex-col gap-3">
 
     <!-- Player Card -->
     <div class="pointer-events-none bg-gray-900/90 backdrop-blur border border-gray-700 rounded-2xl p-3 w-52">
@@ -66,7 +66,7 @@
   </div>
 
   <!-- ══ RIGHT COLUMN ══ -->
-  <div id="desktop-right" class="absolute top-4 right-4 z-10 flex flex-col gap-3 w-52">
+  <div class="absolute top-4 right-4 z-10 flex flex-col gap-3 w-52">
 
     <!-- Controls -->
     <div class="pointer-events-none bg-gray-900/90 backdrop-blur border border-gray-700 rounded-2xl p-3">
@@ -110,9 +110,8 @@
     </div>
   </div>
 
-  <!-- ══ BOTTOM CENTER: CHAT INPUT (desktop) + FLOATING CHAT ICON (mobile) ══ -->
-  <!-- Desktop chat bar (hidden on mobile by JS) -->
-  <div id="desktop-chat-bar" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+  <!-- ══ BOTTOM CENTER: CHAT INPUT ══ -->
+  <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
     <div class="bg-gray-900/95 backdrop-blur border border-gray-700 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl">
       <span id="chat-dot" class="w-2.5 h-2.5 rounded-full bg-blue-400 shrink-0 transition-colors"></span>
       <input id="chat-input" type="text" placeholder="Say something…" maxlength="80"
@@ -122,43 +121,7 @@
     <p class="text-center text-gray-600 text-xs mt-1">Enter to submit · Click input to pause controls</p>
   </div>
 
-  <!-- Mobile floating chat panel (hidden on desktop) -->
-  <div id="mobile-chat-wrap" class="hidden absolute z-40 pointer-events-none">
-    <!-- Chat bubble popup (toggled) -->
-    <div id="mobile-chat-panel" class="hidden absolute bottom-20 right-4 w-80 bg-gray-900/98 backdrop-blur border border-gray-700 rounded-3xl shadow-2xl p-4 pointer-events-auto">
-      <!-- Chat log -->
-      <div class="flex items-center justify-between mb-2">
-        <p class="text-gray-400 text-xs font-bold uppercase tracking-widest">💬 Chat</p>
-        <span id="mob-chat-badge" class="text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded-full">No conv.</span>
-      </div>
-      <div id="mob-chat-log" class="space-y-1.5 overflow-y-auto max-h-36 mb-3">
-        <p id="mob-chat-ph" class="text-gray-600 text-xs text-center py-1">Join a conversation to see messages</p>
-      </div>
-      <!-- Input row -->
-      <div class="flex items-center gap-2 bg-gray-800 rounded-2xl px-3 py-2">
-        <input id="mob-chat-input" type="text" placeholder="Say something…" maxlength="80"
-               class="bg-transparent text-white text-sm outline-none flex-1 placeholder-gray-500 caret-blue-400"/>
-        <button id="mob-chat-btn" class="bg-blue-600 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-blue-400 shrink-0">Say</button>
-      </div>
-    </div>
-    <!-- Floating chat icon button -->
-    <button id="mob-chat-fab"
-      class="absolute bottom-4 right-20 w-14 h-14 rounded-full bg-blue-600/90 border-2 border-blue-400 shadow-xl flex items-center justify-center active:scale-90 transition-all pointer-events-auto">
-      <span class="text-2xl">💬</span>
-    </button>
-  </div>
-
-  <!-- Desktop customize button -->
-  <button id="btn-cust" class="absolute bottom-4 right-4 z-10 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-sm rounded-xl px-4 py-2.5 border border-blue-400 transition-all">🎨 Customize</button>
-
-  <!-- Mobile floating settings icon (hidden on desktop) -->
-  <button id="mob-settings-fab" class="hidden absolute bottom-4 right-4 z-40 w-14 h-14 rounded-full bg-gray-800/90 border-2 border-gray-600 shadow-xl items-center justify-center active:scale-90 transition-all">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round"
-        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-    </svg>
-  </button>
+  <!-- ══ MOBILE CONTROLS (touch devices only) ══ -->
   <div id="mobile-wrap" class="hidden absolute inset-0 z-30 pointer-events-none">
 
     <!-- LEFT: Run toggle + Virtual joystick -->
@@ -1387,99 +1350,8 @@ function initMobileControls(){
   const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
   if(!isTouch) return;
 
-  // ── Hide desktop-only elements ─────────────────
-  document.getElementById('desktop-left').classList.add('hidden');
-  document.getElementById('desktop-right').classList.add('hidden');
-  document.getElementById('desktop-chat-bar').classList.add('hidden');
-  document.getElementById('btn-cust').classList.add('hidden');
-
-  // ── Show mobile-only elements ──────────────────
-  document.getElementById('mobile-chat-wrap').classList.remove('hidden');
-  document.getElementById('mobile-chat-wrap').classList.add('block');
-  const settingsFab = document.getElementById('mob-settings-fab');
-  settingsFab.classList.remove('hidden');
-  settingsFab.classList.add('flex');
-
-  // Settings FAB → existing customize panel
-  settingsFab.addEventListener('touchstart', e=>{
-    e.preventDefault(); e.stopPropagation();
-    document.getElementById('panel-cust').classList.toggle('hidden');
-  }, {passive:false});
-
-  // Reposition customize panel above settings fab on mobile
-  const custPanel = document.getElementById('panel-cust');
-  custPanel.className = custPanel.className.replace('bottom-16 right-4','bottom-20 right-4');
-
-  // ── Chat FAB toggle ────────────────────────────
-  const chatFab   = document.getElementById('mob-chat-fab');
-  const chatPanel = document.getElementById('mobile-chat-panel');
-  let chatOpen = false;
-
-  chatFab.addEventListener('touchstart', e=>{
-    e.preventDefault(); e.stopPropagation();
-    chatOpen = !chatOpen;
-    if(chatOpen){
-      chatPanel.classList.remove('hidden');
-      chatFab.classList.remove('bg-blue-600/90','border-blue-400');
-      chatFab.classList.add('bg-emerald-600/90','border-emerald-400');
-    } else {
-      chatPanel.classList.add('hidden');
-      chatFab.classList.remove('bg-emerald-600/90','border-emerald-400');
-      chatFab.classList.add('bg-blue-600/90','border-blue-400');
-      document.getElementById('mob-chat-input').blur();
-    }
-  }, {passive:false});
-
-  // Close chat panel when tapping outside
-  document.addEventListener('touchstart', e=>{
-    if(chatOpen && !chatPanel.contains(e.target) && e.target!==chatFab){
-      chatOpen=false;
-      chatPanel.classList.add('hidden');
-      chatFab.classList.remove('bg-emerald-600/90','border-emerald-400');
-      chatFab.classList.add('bg-blue-600/90','border-blue-400');
-    }
-  }, {passive:true});
-
-  // ── Mobile chat submit ─────────────────────────
-  const mobInput = document.getElementById('mob-chat-input');
-  const mobBtn   = document.getElementById('mob-chat-btn');
-  mobInput.addEventListener('focus', ()=>inputFocused=true);
-  mobInput.addEventListener('blur',  ()=>inputFocused=false);
-  mobInput.addEventListener('keydown', e=>{ e.stopPropagation(); if(e.key==='Enter') mobSubmitChat(); });
-  mobBtn.addEventListener('touchstart', e=>{ e.preventDefault(); mobSubmitChat(); }, {passive:false});
-
-  function mobSubmitChat(){
-    const text = mobInput.value.trim(); if(!text||!myVisual) return;
-    drawBubble(myVisual, text);
-    myVisual.bMesh.visible=true;
-    if(myVisual.bubTimer) clearTimeout(myVisual.bubTimer);
-    myVisual.bubTimer=setTimeout(()=>myVisual.bMesh.visible=false, Math.max(3500,text.length*95));
-    if(activeConvIP){
-      mobAddChatMsg(myIP, myProfile?.name||'Me', text);
-      if(db) db.from('messages').insert({from_ip:myIP,to_ip:activeConvIP,text});
-    }
-    mobInput.value=''; mobInput.blur();
-  }
-
-  // Helper: add message to mobile chat log
-  function mobAddChatMsg(ip, name, text){
-    const log=document.getElementById('mob-chat-log');
-    const ph=document.getElementById('mob-chat-ph'); if(ph) ph.remove();
-    const isMe=ip===myIP;
-    const d=document.createElement('div');
-    d.className=`text-xs border-l-2 pl-2 py-0.5 ${isMe?'border-blue-600':'border-green-600'}`;
-    const time=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-    d.innerHTML=`<span class="${isMe?'text-blue-400':'text-green-400'} font-bold">${name}</span> <span class="text-gray-600">${time}</span><br><span class="text-gray-200">${text}</span>`;
-    log.appendChild(d); log.scrollTop=log.scrollHeight;
-  }
-
-  // Sync mobile chat badge with desktop badge changes
-  const desktopBadge = document.getElementById('chat-badge');
-  const mobBadge     = document.getElementById('mob-chat-badge');
-  new MutationObserver(()=>{
-    mobBadge.textContent  = desktopBadge.textContent;
-    mobBadge.className    = desktopBadge.className;
-  }).observe(desktopBadge, {childList:true, attributes:true, attributeFilter:['class']});
+  const wrap  = document.getElementById('mobile-wrap');
+  wrap.classList.remove('hidden');
 
   const outer = document.getElementById('joy-outer');
   const knob  = document.getElementById('joy-knob');
