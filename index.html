@@ -13,7 +13,7 @@
 
   <canvas id="c" class="absolute inset-0"></canvas>
 
-  <!-- ══ PHONE NOTIFICATION (top-center, hidden by default) ══ -->
+  <!-- ══ PHONE NOTIFICATION ══ -->
   <div id="notif" class="absolute top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-out opacity-0 -translate-y-10 pointer-events-none">
     <div class="bg-gray-900/96 backdrop-blur-md border border-gray-600 rounded-3xl shadow-2xl shadow-black p-4 w-80">
       <div class="flex items-center gap-2 mb-3">
@@ -33,15 +33,66 @@
       </div>
       <div class="flex gap-2">
         <button id="notif-accept"  class="flex-1 bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white text-sm font-bold py-2.5 rounded-2xl transition-all">✅ Accept</button>
-        <button id="notif-decline" class="flex-1 bg-red-900   hover:bg-red-800    active:scale-95 text-white text-sm font-bold py-2.5 rounded-2xl transition-all">❌ Decline</button>
+        <button id="notif-decline" class="flex-1 bg-red-900 hover:bg-red-800 active:scale-95 text-white text-sm font-bold py-2.5 rounded-2xl transition-all">❌ Decline</button>
       </div>
     </div>
   </div>
 
-  <!-- ══ LEFT COLUMN ══ -->
-  <div id="desktop-left" class="hidden lg:flex flex-col absolute top-4 left-4 z-10 gap-3">
+  <!-- ══ AV OVERLAY — video panels, shown during active conversation ══ -->
+  <div id="av-overlay" class="hidden absolute inset-0 z-20 pointer-events-none">
 
-    <!-- Player Card -->
+    <!-- Remote video: top-center -->
+    <div id="remote-video-wrap" class="hidden absolute top-4 left-1/2 -translate-x-1/2 pointer-events-auto">
+      <div class="relative rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-2xl">
+        <video id="remote-video" autoplay playsinline class="w-52 lg:w-72 aspect-video object-cover bg-gray-900/95 block"></video>
+        <!-- "Camera off" placeholder -->
+        <div id="remote-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95">
+          <span class="text-5xl mb-2">👤</span>
+          <p id="remote-video-name" class="text-white text-xs font-bold">—</p>
+          <p class="text-gray-500 text-xs mt-1">Camera off</p>
+        </div>
+        <!-- Name/live badge -->
+        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2">
+          <div class="flex items-center gap-2">
+            <span id="remote-live-dot" class="hidden w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <p id="remote-name-label" class="text-white text-xs font-bold truncate">—</p>
+          </div>
+        </div>
+        <!-- Local PiP in corner of remote video -->
+        <div id="local-video-wrap" class="hidden absolute top-2 right-2 w-20 lg:w-28 aspect-video rounded-xl overflow-hidden border-2 border-blue-400 shadow-lg">
+          <video id="local-video" autoplay playsinline muted class="w-full h-full object-cover bg-gray-800 block"></video>
+          <div class="absolute bottom-0 inset-x-0 bg-black/70 text-center py-0.5">
+            <p class="text-white text-xs font-bold">You</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compact placeholder when conversation is active but remote cam is off -->
+    <div id="av-status-bar" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-2xl px-4 py-2 pointer-events-none">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <p id="av-conv-name" class="text-emerald-300 text-xs font-bold">In conversation</p>
+        <span class="text-gray-600 text-xs">· Camera off</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ AV CONTROLS — shown during conversation ══ -->
+  <div id="av-controls" class="hidden absolute bottom-16 left-1/2 -translate-x-1/2 z-20 flex gap-2 pointer-events-auto">
+    <button id="btn-cam" onclick="toggleCamera()"
+      class="flex items-center gap-1.5 px-3 py-2 rounded-full bg-gray-900/95 border border-gray-600 text-white text-xs font-bold backdrop-blur active:scale-95 transition-all shadow-xl">
+      <span>📷</span><span>Cam Off</span>
+    </button>
+    <button id="btn-mic" onclick="toggleMic()"
+      class="flex items-center gap-1.5 px-3 py-2 rounded-full bg-gray-900/95 border border-gray-600 text-white text-xs font-bold backdrop-blur active:scale-95 transition-all shadow-xl">
+      <span>🎤</span><span>Muted</span>
+    </button>
+  </div>
+
+  <!-- ══ LEFT COLUMN (desktop only) ══ -->
+  <div id="desktop-left" class="hidden lg:flex flex-col absolute top-4 left-4 z-10 gap-3">
     <div class="pointer-events-none bg-gray-900/90 backdrop-blur border border-gray-700 rounded-2xl p-3 w-52">
       <div class="flex items-center gap-2 mb-2">
         <div id="pc-avatar" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-white font-black text-base bg-blue-600">?</div>
@@ -57,18 +108,14 @@
         <div class="flex justify-between"><span class="text-gray-400">Grounded</span><span id="hud-g" class="text-emerald-400 font-bold">Yes</span></div>
       </div>
     </div>
-
-    <!-- Nearby players -->
     <div class="bg-gray-900/90 backdrop-blur border border-gray-700 rounded-2xl p-3 w-52">
       <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">👥 Nearby</p>
       <div id="nearby-list"><p class="text-gray-600 text-xs text-center py-1">No players nearby</p></div>
     </div>
   </div>
 
-  <!-- ══ RIGHT COLUMN ══ -->
+  <!-- ══ RIGHT COLUMN (desktop only) ══ -->
   <div id="desktop-right" class="hidden lg:flex flex-col absolute top-4 right-4 z-10 w-52 gap-3">
-
-    <!-- Controls -->
     <div class="pointer-events-none bg-gray-900/90 backdrop-blur border border-gray-700 rounded-2xl p-3">
       <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">⌨️ Controls</p>
       <div class="space-y-1 text-xs">
@@ -97,8 +144,6 @@
         <p class="text-gray-500 pt-1">🖱 Drag orbit · Scroll zoom</p>
       </div>
     </div>
-
-    <!-- Chat history -->
     <div class="bg-gray-900/90 backdrop-blur border border-gray-700 rounded-2xl p-3">
       <div class="flex items-center justify-between mb-2">
         <p class="text-gray-400 text-xs font-bold uppercase tracking-widest">💬 Chat</p>
@@ -110,8 +155,7 @@
     </div>
   </div>
 
-  <!-- ══ BOTTOM CENTER: CHAT INPUT (desktop) + FLOATING CHAT ICON (mobile) ══ -->
-  <!-- Desktop chat bar: hidden below lg breakpoint via CSS -->
+  <!-- ══ DESKTOP CHAT BAR ══ -->
   <div id="desktop-chat-bar" class="hidden lg:block absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
     <div class="bg-gray-900/95 backdrop-blur border border-gray-700 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl">
       <span id="chat-dot" class="w-2.5 h-2.5 rounded-full bg-blue-400 shrink-0 transition-colors"></span>
@@ -122,100 +166,40 @@
     <p class="text-center text-gray-600 text-xs mt-1">Enter to submit · Click input to pause controls</p>
   </div>
 
-  <!-- Mobile floating chat: hidden on lg+ via CSS. Uses absolute inset-0 so children can absolute-position freely. -->
+  <!-- ══ MOBILE CHAT WRAP ══ -->
   <div id="mobile-chat-wrap" class="lg:hidden absolute inset-0 z-40 pointer-events-none">
-    <!-- Chat panel: appears above the chat FAB (bottom-24 = above bottom-20 FAB + 56px) -->
-    <div id="mobile-chat-panel" class="hidden absolute bottom-24 right-4 left-4 bg-gray-900/98 backdrop-blur border border-gray-700 rounded-3xl shadow-2xl p-4 pointer-events-auto">
-      <div class="flex items-center justify-between mb-2">
-        <p class="text-gray-400 text-xs font-bold uppercase tracking-widest">💬 Chat</p>
-        <span id="mob-chat-badge" class="text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded-full">No conv.</span>
+    <div id="mobile-chat-panel" class="hidden absolute bottom-24 left-3 right-3 bg-gray-900/98 backdrop-blur border border-gray-700 rounded-3xl shadow-2xl pointer-events-auto">
+      <div class="flex items-center justify-between px-5 pt-4 pb-2">
+        <p class="text-gray-300 text-sm font-bold uppercase tracking-widest">💬 Chat</p>
+        <span id="mob-chat-badge" class="text-xs bg-gray-700 text-gray-400 px-2 py-1 rounded-full font-bold">No conv.</span>
       </div>
-      <div id="mob-chat-log" class="space-y-1.5 overflow-y-auto max-h-36 mb-3">
-        <p id="mob-chat-ph" class="text-gray-600 text-xs text-center py-1">Join a conversation to see messages</p>
+      <div id="mob-chat-log" class="space-y-2 overflow-y-auto max-h-52 px-5 pb-3">
+        <p id="mob-chat-ph" class="text-gray-600 text-sm text-center py-4">Join a conversation to see messages</p>
       </div>
-      <div class="flex items-center gap-2 bg-gray-800 rounded-2xl px-3 py-2">
+      <div class="flex items-center gap-3 bg-gray-800/80 rounded-b-3xl px-4 py-3 border-t border-gray-700">
         <input id="mob-chat-input" type="text" placeholder="Say something…" maxlength="80"
-               class="bg-transparent text-white text-sm outline-none flex-1 placeholder-gray-500 caret-blue-400"/>
-        <button id="mob-chat-btn" class="bg-blue-600 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-blue-400 shrink-0">Say</button>
+               class="bg-transparent text-white text-base outline-none flex-1 min-w-0 placeholder-gray-500 caret-blue-400 py-1"/>
+        <button id="mob-chat-btn"
+          class="bg-blue-600 active:scale-95 text-white text-sm font-bold px-5 py-3 rounded-2xl border border-blue-400 shrink-0 whitespace-nowrap transition-all">
+          Say 💬
+        </button>
       </div>
     </div>
-    <!-- Chat FAB: stacked above settings fab at bottom-20 right-4 -->
     <button id="mob-chat-fab"
-      class="absolute bottom-4 right-20 w-14 h-14 rounded-full bg-blue-600/90 border-2 border-blue-400 shadow-xl flex items-center justify-center active:scale-90 transition-all pointer-events-auto">
+      class="absolute bottom-20 right-4 w-14 h-14 rounded-full bg-blue-600/90 border-2 border-blue-400 shadow-xl flex items-center justify-center active:scale-90 transition-all pointer-events-auto">
       <span class="text-2xl">💬</span>
     </button>
   </div>
 
-  <!-- Desktop customize button: hidden below lg via CSS -->
-  <button id="btn-cust" class="hidden lg:flex items-center absolute bottom-4 right-4 z-10 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold text-sm rounded-xl px-4 py-2.5 border border-blue-400 transition-all">🎨 Customize</button>
-
-  <!-- Mobile settings FAB: hidden on lg+ via CSS, visible on mobile/tablet -->
+  <!-- ══ MOBILE SETTINGS FAB ══ -->
   <button id="mob-settings-fab" class="lg:hidden flex absolute bottom-4 right-4 z-40 w-14 h-14 rounded-full bg-gray-800/90 border-2 border-gray-600 shadow-xl items-center justify-center active:scale-90 transition-all">
     <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round"
-        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
     </svg>
   </button>
 
-  <!-- Mobile controls wrap: hidden on lg+ via CSS -->
-  <div id="mobile-wrap" class="lg:hidden absolute inset-0 z-30 pointer-events-none">
-
-    <!-- LEFT: Run toggle + Virtual joystick -->
-    <div class="absolute bottom-10 left-6 flex flex-col items-center gap-3 pointer-events-auto">
-
-      <!-- Run toggle button -->
-      <button id="btn-run-mobile"
-        class="px-5 py-2 rounded-full text-sm font-black border-2 border-white/30 bg-white/15 text-white/70 transition-all active:scale-95 select-none">
-        🏃 Run
-      </button>
-
-      <!-- Joystick outer ring -->
-      <div id="joy-outer"
-        class="w-36 h-36 rounded-full bg-white/10 border-2 border-white/25 relative">
-        <!-- Crosshair lines -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="w-full h-px bg-white/15"></div>
-        </div>
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="h-full w-px bg-white/15"></div>
-        </div>
-        <!-- Center dot -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="w-3 h-3 rounded-full bg-white/25"></div>
-        </div>
-        <!-- Knob (positioned by JS) -->
-        <div id="joy-knob"
-          class="w-16 h-16 rounded-full bg-white/35 border-2 border-white/65 absolute shadow-xl">
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT: Action buttons 2×2 grid — sits above FABs (bottom-4=settings, bottom-20=chat) -->
-    <div class="absolute bottom-20 right-4 grid grid-cols-2 gap-3 pointer-events-auto">
-      <button id="m-wave"
-        class="w-[72px] h-[72px] rounded-2xl bg-yellow-500/25 border-2 border-yellow-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-yellow-500/60 transition-all select-none">
-        <span class="text-2xl leading-none">👋</span>
-        <span class="text-xs font-bold mt-0.5">Wave</span>
-      </button>
-      <button id="m-sit"
-        class="w-[72px] h-[72px] rounded-2xl bg-teal-500/25 border-2 border-teal-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-teal-500/60 transition-all select-none">
-        <span class="text-2xl leading-none">🪑</span>
-        <span class="text-xs font-bold mt-0.5">Sit</span>
-      </button>
-      <button id="m-grab"
-        class="w-[72px] h-[72px] rounded-2xl bg-orange-500/25 border-2 border-orange-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-orange-500/60 transition-all select-none">
-        <span id="m-grab-icon" class="text-2xl leading-none">🤚</span>
-        <span id="m-grab-lbl" class="text-xs font-bold mt-0.5">Grab</span>
-      </button>
-      <button id="m-sjump"
-        class="w-[72px] h-[72px] rounded-2xl bg-purple-500/25 border-2 border-purple-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-purple-500/60 transition-all select-none">
-        <span class="text-2xl leading-none">🚀</span>
-        <span class="text-xs font-bold mt-0.5">S.Jump</span>
-      </button>
-    </div>
-
-  </div>
+  <!-- ══ CUSTOMIZE PANEL ══ -->
   <div id="panel-cust" class="absolute bottom-20 right-4 z-50 hidden bg-gray-900/95 backdrop-blur border border-gray-700 rounded-2xl p-4 w-52">
     <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-0.5">✨ Customize</p>
     <p id="cust-name" class="text-blue-400 text-xs font-bold mb-3">—</p>
@@ -255,43 +239,65 @@
     </div>
   </div>
 
+  <!-- ══ MOBILE CONTROLS ══ -->
+  <div id="mobile-wrap" class="lg:hidden absolute inset-0 z-30 pointer-events-none">
+    <div class="absolute bottom-10 left-6 flex flex-col items-center gap-3 pointer-events-auto">
+      <button id="btn-run-mobile"
+        class="px-5 py-2 rounded-full text-sm font-black border-2 border-white/30 bg-white/15 text-white/70 transition-all active:scale-95 select-none">
+        🏃 Run
+      </button>
+      <div id="joy-outer" class="w-36 h-36 rounded-full bg-white/10 border-2 border-white/25 relative">
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><div class="w-full h-px bg-white/15"></div></div>
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><div class="h-full w-px bg-white/15"></div></div>
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><div class="w-3 h-3 rounded-full bg-white/25"></div></div>
+        <div id="joy-knob" class="w-16 h-16 rounded-full bg-white/35 border-2 border-white/65 absolute shadow-xl"></div>
+      </div>
+    </div>
+    <div class="absolute bottom-36 right-4 grid grid-cols-2 gap-3 pointer-events-auto">
+      <button id="m-wave" class="w-[72px] h-[72px] rounded-2xl bg-yellow-500/25 border-2 border-yellow-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-yellow-500/60 transition-all select-none">
+        <span class="text-2xl leading-none">👋</span><span class="text-xs font-bold mt-0.5">Wave</span>
+      </button>
+      <button id="m-sit" class="w-[72px] h-[72px] rounded-2xl bg-teal-500/25 border-2 border-teal-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-teal-500/60 transition-all select-none">
+        <span class="text-2xl leading-none">🪑</span><span class="text-xs font-bold mt-0.5">Sit</span>
+      </button>
+      <button id="m-grab" class="w-[72px] h-[72px] rounded-2xl bg-orange-500/25 border-2 border-orange-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-orange-500/60 transition-all select-none">
+        <span id="m-grab-icon" class="text-2xl leading-none">🤚</span><span id="m-grab-lbl" class="text-xs font-bold mt-0.5">Grab</span>
+      </button>
+      <button id="m-sjump" class="w-[72px] h-[72px] rounded-2xl bg-purple-500/25 border-2 border-purple-400/50 text-white flex flex-col items-center justify-center gap-0.5 active:scale-90 active:bg-purple-500/60 transition-all select-none">
+        <span class="text-2xl leading-none">🚀</span><span class="text-xs font-bold mt-0.5">S.Jump</span>
+      </button>
+    </div>
+  </div>
+
 </div>
 <script>
 'use strict';
 
 /* ═══════════════════════════════════════════════════════════════
-   SUPABASE SETUP  — run this SQL in your Supabase SQL Editor:
+   SUPABASE SQL — run in SQL Editor:
 
-   -- 1. TABLES
-   create table if not exists players (
-     ip text primary key, name text,
-     pos_x float8 default 0, pos_y float8 default 0,
-     pos_z float8 default 0, facing float8 default 0,
-     anim text default 'idle',
+   create table if not exists players (ip text primary key, name text,
+     pos_x float8 default 0, pos_y float8 default 0, pos_z float8 default 0,
+     facing float8 default 0, anim text default 'idle',
      shirt bigint default 2263282, hat bigint default 16717636,
      pants bigint default 1400256, skin bigint default 16700826,
-     last_seen timestamptz default now()
-   );
-   create table if not exists conv_requests (
-     id uuid primary key default gen_random_uuid(),
-     from_ip text, to_ip text, status text default 'pending',
-     created_at timestamptz default now()
-   );
-   create table if not exists messages (
-     id uuid primary key default gen_random_uuid(),
-     from_ip text, to_ip text, text text,
-     created_at timestamptz default now()
-   );
+     last_seen timestamptz default now());
+   create table if not exists conv_requests (id uuid primary key default gen_random_uuid(),
+     from_ip text, to_ip text, status text default 'pending', created_at timestamptz default now());
+   create table if not exists messages (id uuid primary key default gen_random_uuid(),
+     from_ip text, to_ip text, text text, created_at timestamptz default now());
+   create table if not exists webrtc_signals (id uuid primary key default gen_random_uuid(),
+     from_ip text, to_ip text, type text, payload text, created_at timestamptz default now());
 
-   -- 2. DISABLE RLS (required for anonymous browser access)
    alter table players disable row level security;
    alter table conv_requests disable row level security;
    alter table messages disable row level security;
+   alter table webrtc_signals disable row level security;
 
-   -- 3. ENABLE REALTIME
    alter publication supabase_realtime add table players;
    alter publication supabase_realtime add table conv_requests;
    alter publication supabase_realtime add table messages;
+   alter publication supabase_realtime add table webrtc_signals;
    ═══════════════════════════════════════════════════════════ */
 
 const SUPABASE_URL = 'https://jimghytmdvpgqtxurwys.supabase.co';
@@ -311,34 +317,23 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x080818);
 scene.fog = new THREE.Fog(0x080818, 32, 58);
-
 const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
-
-function onResize() {
-  renderer.setSize(innerWidth, innerHeight);
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-}
+function onResize(){renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
 onResize(); addEventListener('resize', onResize);
 
-// ── LIGHTS ──────────────────────────────
 scene.add(new THREE.AmbientLight(0xffffff, 0.45));
 const sun = new THREE.DirectionalLight(0xfffaee, 2.0);
 sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, {left:-25,right:25,top:25,bottom:-5,near:.5,far:60});
 scene.add(sun); scene.add(sun.target);
-const fill=new THREE.DirectionalLight(0x4466ff,0.35);
+const fill = new THREE.DirectionalLight(0x4466ff, 0.35);
 fill.position.set(-8,5,-5); scene.add(fill);
 
-// ── PHYSICS CONSTANTS ────────────────────
-const GRAV=22, JUMPV=10.5, JUMPV2=17.5, WALKSP=5.5, RUNSP=10, MAXSTEP=0.82, CHRR=0.32;
-const CONV_RANGE=8;
+const GRAV=22, JUMPV=10.5, JUMPV2=17.5, WALKSP=5.5, RUNSP=10, MAXSTEP=0.82, CHRR=0.32, CONV_RANGE=8;
 
-// ── PLATFORMS ────────────────────────────
 const PDATA=[
   {x:2,y:.375,z:-2,w:4,h:.75,d:2,c:0xFF8C00},{x:2,y:.75,z:-4,w:4,h:1.5,d:2,c:0xFFA500},
   {x:2,y:1.125,z:-6,w:4,h:2.25,d:2,c:0xFFBF00},{x:2,y:1.5,z:-8,w:4,h:3,d:2,c:0xFFD700},
@@ -359,236 +354,109 @@ PDATA.forEach(p=>{
   el.position.copy(m.position);scene.add(el);
 });
 
-// ── GROUND ───────────────────────────────
 const tG=new THREE.BoxGeometry(2,.2,2),tM=[new THREE.MeshLambertMaterial({color:0x3a8c3a}),new THREE.MeshLambertMaterial({color:0x2f7a2f})];
 for(let i=-13;i<13;i++)for(let j=-13;j<13;j++){const t=new THREE.Mesh(tG,tM[(i+j+26)%2]);t.position.set(i*2+1,-.1,j*2+1);t.receiveShadow=true;scene.add(t);}
 
-// ── STARS ────────────────────────────────
 const sB=[];for(let i=0;i<500;i++)sB.push((Math.random()-.5)*130,Math.random()*38+8,(Math.random()-.5)*130);
 const sG=new THREE.BufferGeometry();sG.setAttribute('position',new THREE.Float32BufferAttribute(sB,3));
 scene.add(new THREE.Points(sG,new THREE.PointsMaterial({color:0xffffff,size:.13})));
 
 // ═════════════════════════════════════════
-//  WORLD PROPS (chair, sword, hammer, duct tape)
+//  WORLD PROPS
 // ═════════════════════════════════════════
-// Each prop: { group, labelMesh, name, heldBy, velX, velY, velZ, ry, angVel, grounded, baseX, baseZ }
-const propList = [];
-const GRAB_RANGE   = 2.8;  // max distance to grab
-const THROW_SPEED  = 14;   // throw velocity magnitude
-const PROP_GRAVITY = 24;   // prop falling gravity
+const propList=[], GRAB_RANGE=2.8, THROW_SPEED=14, PROP_GRAVITY=24;
 
-function box(w,h,d,color,rx,ry,rz){
-  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color}));
-  if(rx)m.rotation.x=rx; if(ry)m.rotation.y=ry; if(rz)m.rotation.z=rz;
-  m.castShadow=true; return m;
-}
-function addBox(g,w,h,d,color,ox,oy,oz,rx,ry,rz){
-  const m=box(w,h,d,color,rx,ry,rz); m.position.set(ox,oy,oz); g.add(m);
-}
+function box(w,h,d,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshLambertMaterial({color}));m.castShadow=true;return m;}
+function addBox(g,w,h,d,color,ox,oy,oz){const m=box(w,h,d,color);m.position.set(ox,oy,oz);g.add(m);}
 
-// ── Label canvas factory ──────────────────
 function makePropLabel(name){
-  const cv=document.createElement('canvas'); cv.width=256; cv.height=64;
-  const ctx=cv.getContext('2d');
-  ctx.fillStyle='rgba(5,5,20,0.88)';
-  ctx.beginPath(); ctx.roundRect(4,4,248,56,14); ctx.fill();
-  ctx.strokeStyle='rgba(150,180,255,0.55)'; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.roundRect(4,4,248,56,14); ctx.stroke();
-  ctx.fillStyle='#e8f0ff'; ctx.font='bold 22px "Segoe UI",Arial,sans-serif';
-  ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(name,128,34);
-  const tex=new THREE.CanvasTexture(cv);
-  const mesh=new THREE.Mesh(
-    new THREE.PlaneGeometry(2.2,.56),
-    new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false,side:THREE.DoubleSide})
-  );
-  return mesh;
+  const cv=document.createElement('canvas');cv.width=256;cv.height=64;const ctx=cv.getContext('2d');
+  ctx.fillStyle='rgba(5,5,20,0.88)';ctx.beginPath();ctx.roundRect(4,4,248,56,14);ctx.fill();
+  ctx.strokeStyle='rgba(150,180,255,0.55)';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(4,4,248,56,14);ctx.stroke();
+  ctx.fillStyle='#e8f0ff';ctx.font='bold 22px "Segoe UI",Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(name,128,34);
+  return new THREE.Mesh(new THREE.PlaneGeometry(2.2,.56),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false,side:THREE.DoubleSide}));
 }
 
-function makeProp(name, buildFn, wx, wz){
-  const g=new THREE.Group(); scene.add(g);
-  g.position.set(wx, 0, wz);
-  buildFn(g);
-
-  const lm = makePropLabel(name);
-  scene.add(lm);
-
-  const prop = {
-    group:g, labelMesh:lm, name,
-    heldBy: null,   // 'player' | null  (extensible for remote players later)
-    velX:0, velY:0, velZ:0,
-    ry:0, angVel:0,
-    grounded:true,
-    baseX:wx, baseZ:wz,
-  };
-  propList.push(prop);
-  return prop;
+function makeProp(name,buildFn,wx,wz){
+  const g=new THREE.Group();scene.add(g);g.position.set(wx,0,wz);buildFn(g);
+  const lm=makePropLabel(name);scene.add(lm);
+  const prop={group:g,labelMesh:lm,name,heldBy:null,velX:0,velY:0,velZ:0,ry:0,angVel:0,grounded:true};
+  propList.push(prop);return prop;
 }
 
-// ─────────────────────────────────────────
-//  🪑  CHAIR  (x=-6, z=10)
-// ─────────────────────────────────────────
-makeProp('Chair', g=>{
-  const W=0x8B4513, DW=0x6B3410; // wood, dark wood
-  // 4 legs
-  [[-0.45,0,-0.45],[0.45,0,-0.45],[-0.45,0,0.35],[0.45,0,0.35]].forEach(([x,,z])=>{
-    addBox(g,.1,.6,.1,W, x,.3,z);
-  });
-  // Seat
-  addBox(g,1.1,.12,1.0,W, 0,.65,-.05);
-  // Back rest vertical bars
-  [-0.38,0,0.38].forEach(x=> addBox(g,.1,.95,.08,W, x,1.15,-.45));
-  // Back rest horizontal rail
-  addBox(g,1.1,.12,.08,DW, 0,1.55,-.45);
-}, -6, 10);
+makeProp('Chair',g=>{
+  const W=0x8B4513,DW=0x6B3410;
+  [[-0.45,0,-0.45],[0.45,0,-0.45],[-0.45,0,0.35],[0.45,0,0.35]].forEach(([x,,z])=>addBox(g,.1,.6,.1,W,x,.3,z));
+  addBox(g,1.1,.12,1.0,W,0,.65,-.05);[-0.38,0,0.38].forEach(x=>addBox(g,.1,.95,.08,W,x,1.15,-.45));addBox(g,1.1,.12,.08,DW,0,1.55,-.45);
+},-6,10);
 
-// ─────────────────────────────────────────
-//  ⚔️  SWORD  (x=0, z=10)
-// ─────────────────────────────────────────
-makeProp('Sword', g=>{
-  const SILVER=0xC8C8D0, GOLD=0xFFCC33, DARK=0x5C3A1E;
-  // Blade (tilted 12° for style)
-  const blade=new THREE.Mesh(new THREE.BoxGeometry(.09,1.55,.03),new THREE.MeshLambertMaterial({color:SILVER}));
-  blade.position.set(0,1.2,0); blade.rotation.z=0.21; blade.castShadow=true; g.add(blade);
-  // Blade edge highlight
-  const edge=new THREE.Mesh(new THREE.BoxGeometry(.02,1.55,.025),new THREE.MeshLambertMaterial({color:0xffffff}));
-  edge.position.set(.035,1.2,0); edge.rotation.z=0.21; g.add(edge);
-  // Crossguard
-  const cg=new THREE.Mesh(new THREE.BoxGeometry(.6,.1,.1),new THREE.MeshLambertMaterial({color:GOLD}));
-  cg.position.set(.1,.43,0); cg.rotation.z=0.21; cg.castShadow=true; g.add(cg);
-  // Handle / grip
-  addBox(g,.08,.42,.08,DARK, .055,.22,0, 0,0,0.21);
-  // Pommel
-  const pom=new THREE.Mesh(new THREE.BoxGeometry(.15,.15,.15),new THREE.MeshLambertMaterial({color:GOLD}));
-  pom.position.set(.025,.02,0); pom.rotation.z=0.21; g.add(pom);
-}, 0, 10);
+makeProp('Sword',g=>{
+  const SILVER=0xC8C8D0,GOLD=0xFFCC33,DARK=0x5C3A1E;
+  const blade=new THREE.Mesh(new THREE.BoxGeometry(.09,1.55,.03),new THREE.MeshLambertMaterial({color:SILVER}));blade.position.set(0,1.2,0);blade.rotation.z=0.21;blade.castShadow=true;g.add(blade);
+  const edge=new THREE.Mesh(new THREE.BoxGeometry(.02,1.55,.025),new THREE.MeshLambertMaterial({color:0xffffff}));edge.position.set(.035,1.2,0);edge.rotation.z=0.21;g.add(edge);
+  const cg=new THREE.Mesh(new THREE.BoxGeometry(.6,.1,.1),new THREE.MeshLambertMaterial({color:GOLD}));cg.position.set(.1,.43,0);cg.rotation.z=0.21;cg.castShadow=true;g.add(cg);
+  addBox(g,.08,.42,.08,DARK,.055,.22,0);
+  const pom=new THREE.Mesh(new THREE.BoxGeometry(.15,.15,.15),new THREE.MeshLambertMaterial({color:GOLD}));pom.position.set(.025,.02,0);pom.rotation.z=0.21;g.add(pom);
+},0,10);
 
-// ─────────────────────────────────────────
-//  🔨  HAMMER  (x=6, z=10)
-// ─────────────────────────────────────────
-makeProp('Hammer', g=>{
-  const WOOD=0x7B4E2D, METAL=0x555A5F, METAL_D=0x333840;
-  // Handle
-  addBox(g,.13,1.1,.13,WOOD, 0,.55,0);
-  // Grip wrap stripes
-  [.2,.45,.7].forEach(y=> addBox(g,.155,.06,.155,0x3a2010, 0,y,0));
-  // Head body
-  addBox(g,.52,.38,.36,METAL, .06,1.18,0);
-  // Head face (striking face, lighter)
-  addBox(g,.06,.32,.30,0x8a9098, .33,1.18,0);
-  // Head back (peen)
-  addBox(g,.12,.22,.20,METAL_D, -.22,1.18,0);
-  // Edge lines on head
-  addBox(g,.54,.04,.38,METAL_D, .06,1.37,0);
-  addBox(g,.54,.04,.38,METAL_D, .06,.99,0);
-}, 6, 10);
+makeProp('Hammer',g=>{
+  const WOOD=0x7B4E2D,METAL=0x555A5F,MD=0x333840;
+  addBox(g,.13,1.1,.13,WOOD,0,.55,0);[.2,.45,.7].forEach(y=>addBox(g,.155,.06,.155,0x3a2010,0,y,0));
+  addBox(g,.52,.38,.36,METAL,.06,1.18,0);addBox(g,.06,.32,.30,0x8a9098,.33,1.18,0);addBox(g,.12,.22,.20,MD,-.22,1.18,0);
+  addBox(g,.54,.04,.38,MD,.06,1.37,0);addBox(g,.54,.04,.38,MD,.06,.99,0);
+},6,10);
 
-// ─────────────────────────────────────────
-//  🖤  BLACK DUCT TAPE  (x=-12, z=10)
-// ─────────────────────────────────────────
-makeProp('Duct Tape', g=>{
-  const BLACK=0x111111, DKGRAY=0x222222, SILVER=0x888890;
-  // Outer roll body — built from arc segments (Roblox blocky cylinder illusion)
-  const R=0.42, segments=10;
-  for(let i=0;i<segments;i++){
-    const a=(i/segments)*Math.PI*2, na=((i+1)/segments)*Math.PI*2;
-    const ma=(a+na)/2, w=2*R*Math.sin(Math.PI/segments)+.04;
-    const rm=new THREE.Mesh(new THREE.BoxGeometry(w,.38,.10),new THREE.MeshLambertMaterial({color:i%2===0?BLACK:DKGRAY}));
-    rm.position.set(Math.cos(ma)*R,.58,Math.sin(ma)*R);
-    rm.rotation.y=-ma; rm.castShadow=true; g.add(rm);
-  }
-  // Inner hub (cardboard tube)
-  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.42,12),new THREE.MeshLambertMaterial({color:0x8B6914}));
-  hub.position.set(0,.58,0); hub.castShadow=true; g.add(hub);
-  // Top disc
-  const top=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.04,12),new THREE.MeshLambertMaterial({color:BLACK}));
-  top.position.set(0,.79,0); g.add(top);
-  // Bottom disc
-  const bot=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.04,12),new THREE.MeshLambertMaterial({color:BLACK}));
-  bot.position.set(0,.37,0); g.add(bot);
-  // Tape tail hanging off roll
-  const tail=new THREE.Mesh(new THREE.BoxGeometry(.08,.22,.56),new THREE.MeshLambertMaterial({color:DKGRAY}));
-  tail.position.set(.0,.3,.42); g.add(tail);
-  // Silver edge strip
-  const strip=new THREE.Mesh(new THREE.BoxGeometry(.86,.04,.04),new THREE.MeshLambertMaterial({color:SILVER}));
-  strip.position.set(0,.80,0); g.add(strip);
-}, -12, 10);
+makeProp('Duct Tape',g=>{
+  const BK=0x111111,DK=0x222222,SL=0x888890,R=0.42;
+  for(let i=0;i<10;i++){const a=(i/10)*Math.PI*2,na=((i+1)/10)*Math.PI*2,ma=(a+na)/2,w=2*R*Math.sin(Math.PI/10)+.04;const rm=new THREE.Mesh(new THREE.BoxGeometry(w,.38,.10),new THREE.MeshLambertMaterial({color:i%2===0?BK:DK}));rm.position.set(Math.cos(ma)*R,.58,Math.sin(ma)*R);rm.rotation.y=-ma;rm.castShadow=true;g.add(rm);}
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.18,.18,.42,12),new THREE.MeshLambertMaterial({color:0x8B6914}));hub.position.set(0,.58,0);hub.castShadow=true;g.add(hub);
+  const top=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.04,12),new THREE.MeshLambertMaterial({color:BK}));top.position.set(0,.79,0);g.add(top);
+  const bot=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.04,12),new THREE.MeshLambertMaterial({color:BK}));bot.position.set(0,.37,0);g.add(bot);
+  const tail=new THREE.Mesh(new THREE.BoxGeometry(.08,.22,.56),new THREE.MeshLambertMaterial({color:DK}));tail.position.set(0,.3,.42);g.add(tail);
+  const strip=new THREE.Mesh(new THREE.BoxGeometry(.86,.04,.04),new THREE.MeshLambertMaterial({color:SL}));strip.position.set(0,.80,0);g.add(strip);
+},-12,10);
 
 // ═════════════════════════════════════════
 //  SURFACE QUERY
 // ═════════════════════════════════════════
-function getSurface(x,z){
-  let top=0;
-  for(const p of PDATA){if(x>p.x-p.w/2-CHRR&&x<p.x+p.w/2+CHRR&&z>p.z-p.d/2-CHRR&&z<p.z+p.d/2+CHRR){const pt=p.y+p.h*.5;if(pt>top)top=pt;}}
-  return top;
-}
+function getSurface(x,z){let top=0;for(const p of PDATA){if(x>p.x-p.w/2-CHRR&&x<p.x+p.w/2+CHRR&&z>p.z-p.d/2-CHRR&&z<p.z+p.d/2+CHRR){const pt=p.y+p.h*.5;if(pt>top)top=pt;}}return top;}
 
 // ═════════════════════════════════════════
-//  IP → PROFILE (deterministic)
+//  IP → PROFILE
 // ═════════════════════════════════════════
-const ADJ =['Cool','Epic','Swift','Dark','Fire','Laser','Turbo','Cyber','Neon','Hyper','Ultra','Mega','Prime'];
+const ADJ=['Cool','Epic','Swift','Dark','Fire','Laser','Turbo','Cyber','Neon','Hyper','Ultra','Mega','Prime'];
 const NOUN=['Ninja','Master','Gamer','Hero','Wizard','Knight','Dragon','Ghost','Panda','Wolf','Tiger','Eagle','Pixel'];
 const SHIRT_P=[0x2196F3,0xE53935,0x43A047,0xFB8C00,0x8E24AA,0xF06292,0x00ACC1,0xFF6D00,0x00BCD4,0xCDDC39];
-const HAT_P  =[0xFF1744,0x1565C0,0x2E7D32,0x6A1B9A,0xF57F17,0xAD1457,0x00695C,0xBF360C];
+const HAT_P=[0xFF1744,0x1565C0,0x2E7D32,0x6A1B9A,0xF57F17,0xAD1457,0x00695C,0xBF360C];
 const PANTS_P=[0x1565C0,0x212121,0x5D4037,0x37474F,0x1B5E20,0x4A148C];
-const SKIN_P =[0xFFD59A,0xF4A460,0xCD853F,0x8B4513];
+const SKIN_P=[0xFFD59A,0xF4A460,0xCD853F,0x8B4513];
 
 function hashStr(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h)^s.charCodeAt(i);return h>>>0;}
-function ipToProfile(ip){
-  const h = hashStr(ip);
-  // Use >>> (unsigned right-shift) so indices are always positive
-  return {
-    name:  ADJ[h % ADJ.length] + NOUN[(h>>>4) % NOUN.length] + ((h>>>8) % 99 + 1),
-    shirt: SHIRT_P[(h>>>2)  % SHIRT_P.length],
-    hat:   HAT_P  [(h>>>6)  % HAT_P.length  ],
-    pants: PANTS_P[(h>>>10) % PANTS_P.length ],
-    skin:  SKIN_P [(h>>>14) % SKIN_P.length  ],
-  };
-}
-function hexCss(n){ return '#' + (n >>> 0).toString(16).padStart(6,'0'); }
+function ipToProfile(ip){const h=hashStr(ip);return{name:ADJ[h%ADJ.length]+NOUN[(h>>>4)%NOUN.length]+((h>>>8)%99+1),shirt:SHIRT_P[(h>>>2)%SHIRT_P.length],hat:HAT_P[(h>>>6)%HAT_P.length],pants:PANTS_P[(h>>>10)%PANTS_P.length],skin:SKIN_P[(h>>>14)%SKIN_P.length]};}
+function hexCss(n){return'#'+(n>>>0).toString(16).padStart(6,'0');}
 
 // ═════════════════════════════════════════
 //  CANVAS HELPERS
 // ═════════════════════════════════════════
-function rrPath(ctx,x,y,w,h,r){
-  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);
-  ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
-}
+function rrPath(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
 
 function drawNameTag(ch,name,isMe){
-  const ctx=ch.nCtx,W=ch.nCv.width,H=ch.nCv.height;
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle=isMe?'rgba(20,60,150,.92)':'rgba(10,10,30,.88)';
-  rrPath(ctx,2,2,W-4,H-4,10);ctx.fill();
+  const ctx=ch.nCtx,W=ch.nCv.width,H=ch.nCv.height;ctx.clearRect(0,0,W,H);
+  ctx.fillStyle=isMe?'rgba(20,60,150,.92)':'rgba(10,10,30,.88)';rrPath(ctx,2,2,W-4,H-4,10);ctx.fill();
   ctx.strokeStyle=isMe?'#60a5fa':'#374151';ctx.lineWidth=2;rrPath(ctx,2,2,W-4,H-4,10);ctx.stroke();
   ctx.fillStyle='#fff';ctx.font='bold 20px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.fillText(name.length>16?name.slice(0,15)+'…':name,W/2,H/2);ch.nTex.needsUpdate=true;
 }
 
 function drawBubble(ch,text){
-  const W=ch.bCv.width,H=ch.bCv.height,ctx=ch.bCtx;
-  ctx.clearRect(0,0,W,H);
+  const W=ch.bCv.width,H=ch.bCv.height,ctx=ch.bCtx;ctx.clearRect(0,0,W,H);
   const pad=10,tail=28,r=22,bx=pad,by=pad,bw=W-pad*2,bh=H-pad-tail;
-  ctx.beginPath();
-  ctx.moveTo(bx+r,by);ctx.lineTo(bx+bw-r,by);ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r);
-  ctx.lineTo(bx+bw,by+bh-r);ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);
-  ctx.lineTo(W/2+18,by+bh);ctx.lineTo(W/2,H-4);ctx.lineTo(W/2-18,by+bh);
-  ctx.lineTo(bx+r,by+bh);ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r);
-  ctx.lineTo(bx,by+r);ctx.quadraticCurveTo(bx,by,bx+r,by);ctx.closePath();
-  const g=ctx.createLinearGradient(0,by,0,by+bh);g.addColorStop(0,'#fff');g.addColorStop(1,'#eef4ff');
-  ctx.fillStyle=g;ctx.fill();ctx.strokeStyle='#2a2a4a';ctx.lineWidth=3;ctx.stroke();
-  ctx.fillStyle='#111133';ctx.textAlign='center';ctx.textBaseline='middle';
-  const maxW=bw-48,midY=by+bh/2;
+  ctx.beginPath();ctx.moveTo(bx+r,by);ctx.lineTo(bx+bw-r,by);ctx.quadraticCurveTo(bx+bw,by,bx+bw,by+r);ctx.lineTo(bx+bw,by+bh-r);ctx.quadraticCurveTo(bx+bw,by+bh,bx+bw-r,by+bh);ctx.lineTo(W/2+18,by+bh);ctx.lineTo(W/2,H-4);ctx.lineTo(W/2-18,by+bh);ctx.lineTo(bx+r,by+bh);ctx.quadraticCurveTo(bx,by+bh,bx,by+bh-r);ctx.lineTo(bx,by+r);ctx.quadraticCurveTo(bx,by,bx+r,by);ctx.closePath();
+  const gg=ctx.createLinearGradient(0,by,0,by+bh);gg.addColorStop(0,'#fff');gg.addColorStop(1,'#eef4ff');ctx.fillStyle=gg;ctx.fill();ctx.strokeStyle='#2a2a4a';ctx.lineWidth=3;ctx.stroke();
+  ctx.fillStyle='#111133';ctx.textAlign='center';ctx.textBaseline='middle';const maxW=bw-48,midY=by+bh/2;
   ctx.font='bold 28px "Segoe UI",Arial,sans-serif';
   if(ctx.measureText(text).width<=maxW){ctx.fillText(text,W/2,midY);}
-  else{
-    ctx.font='bold 22px "Segoe UI",Arial,sans-serif';
-    const words=text.split(' '),lines=[];let cur='';
-    for(const w of words){const t=cur?cur+' '+w:w;if(ctx.measureText(t).width>maxW&&cur){lines.push(cur);cur=w;}else cur=t;}
-    if(cur)lines.push(cur);
-    const lh=30,sy=midY-((lines.length-1)/2)*lh;
-    lines.slice(0,3).forEach((l,i)=>ctx.fillText(l,W/2,sy+i*lh));
-  }
+  else{ctx.font='bold 22px "Segoe UI",Arial,sans-serif';const words=text.split(' '),lines=[];let cur='';for(const w of words){const t=cur?cur+' '+w:w;if(ctx.measureText(t).width>maxW&&cur){lines.push(cur);cur=w;}else cur=t;}if(cur)lines.push(cur);const lh=30,sy=midY-((lines.length-1)/2)*lh;lines.slice(0,3).forEach((l,i)=>ctx.fillText(l,W/2,sy+i*lh));}
   ch.bTex.needsUpdate=true;
 }
 
@@ -596,90 +464,299 @@ function drawBubble(ch,text){
 //  CHARACTER FACTORY
 // ═════════════════════════════════════════
 function buildChar(colors){
-  const mat={
-    skin:   new THREE.MeshLambertMaterial({color:colors.skin }),
-    shirt:  new THREE.MeshLambertMaterial({color:colors.shirt}),
-    pants:  new THREE.MeshLambertMaterial({color:colors.pants}),
-    shoe:   new THREE.MeshLambertMaterial({color:0x212121}),
-    hat:    new THREE.MeshLambertMaterial({color:colors.hat  }),
-    hatBand:new THREE.MeshLambertMaterial({color:0x111111}),
-    eye:    new THREE.MeshLambertMaterial({color:0xffffff}),
-    pupil:  new THREE.MeshLambertMaterial({color:0x111111}),
-    mouth:  new THREE.MeshLambertMaterial({color:0x222222}),
-  };
+  const mat={skin:new THREE.MeshLambertMaterial({color:colors.skin}),shirt:new THREE.MeshLambertMaterial({color:colors.shirt}),pants:new THREE.MeshLambertMaterial({color:colors.pants}),shoe:new THREE.MeshLambertMaterial({color:0x212121}),hat:new THREE.MeshLambertMaterial({color:colors.hat}),hatBand:new THREE.MeshLambertMaterial({color:0x111111}),eye:new THREE.MeshLambertMaterial({color:0xffffff}),pupil:new THREE.MeshLambertMaterial({color:0x111111}),mouth:new THREE.MeshLambertMaterial({color:0x222222})};
   const g=new THREE.Group();scene.add(g);
   const HG=new THREE.Group();HG.position.y=3.80;g.add(HG);
   const hM=new THREE.Mesh(new THREE.BoxGeometry(1.25,1.30,1.25),mat.skin);hM.castShadow=true;HG.add(hM);
-  [[-0.3,.14],[0.3,.14]].forEach(([x,y])=>{
-    const ew=new THREE.Mesh(new THREE.BoxGeometry(.26,.23,.05),mat.eye);ew.position.set(x,y,.64);HG.add(ew);
-    const pu=new THREE.Mesh(new THREE.BoxGeometry(.12,.14,.06),mat.pupil);pu.position.set(x+.02,y-.02,.67);HG.add(pu);
-  });
+  [[-0.3,.14],[0.3,.14]].forEach(([x,y])=>{const ew=new THREE.Mesh(new THREE.BoxGeometry(.26,.23,.05),mat.eye);ew.position.set(x,y,.64);HG.add(ew);const pu=new THREE.Mesh(new THREE.BoxGeometry(.12,.14,.06),mat.pupil);pu.position.set(x+.02,y-.02,.67);HG.add(pu);});
   const smC=new THREE.Mesh(new THREE.BoxGeometry(.38,.08,.05),mat.mouth);smC.position.set(0,-.22,.64);HG.add(smC);
   [-.18,.18].forEach(x=>{const c=new THREE.Mesh(new THREE.BoxGeometry(.08,.13,.05),mat.mouth);c.position.set(x,-.17,.64);HG.add(c);});
   const hatG=new THREE.Group();hatG.position.y=.70;HG.add(hatG);
-  [[new THREE.BoxGeometry(1.6,.1,1.6),mat.hat,0],[new THREE.BoxGeometry(1.16,.2,1.16),mat.hatBand,.24],[new THREE.BoxGeometry(1.12,.78,1.12),mat.hat,.73]].forEach(([geo,m,y])=>{
-    const ms=new THREE.Mesh(geo,m);ms.position.y=y;ms.castShadow=true;hatG.add(ms);
-  });
+  [[new THREE.BoxGeometry(1.6,.1,1.6),mat.hat,0],[new THREE.BoxGeometry(1.16,.2,1.16),mat.hatBand,.24],[new THREE.BoxGeometry(1.12,.78,1.12),mat.hat,.73]].forEach(([geo,m,y])=>{const ms=new THREE.Mesh(geo,m);ms.position.y=y;ms.castShadow=true;hatG.add(ms);});
   const torso=new THREE.Mesh(new THREE.BoxGeometry(1.4,1.5,.78),mat.shirt);torso.position.y=2.35;torso.castShadow=true;g.add(torso);
-  const LA=new THREE.Group();LA.position.set(-.92,3.1,0);g.add(LA);
-  const RA=new THREE.Group();RA.position.set(.92,3.1,0);g.add(RA);
-  [LA,RA].forEach(ag=>{
-    const arm=new THREE.Mesh(new THREE.BoxGeometry(.46,1.3,.46),mat.shirt);arm.position.y=-.65;arm.castShadow=true;ag.add(arm);
-    const hand=new THREE.Mesh(new THREE.BoxGeometry(.46,.38,.46),mat.skin);hand.position.y=-1.475;ag.add(hand);
-  });
-  const LL=new THREE.Group();LL.position.set(-.34,1.6,0);g.add(LL);
-  const RL=new THREE.Group();RL.position.set(.34,1.6,0);g.add(RL);
-  [LL,RL].forEach(lg=>{
-    const leg=new THREE.Mesh(new THREE.BoxGeometry(.58,1.3,.58),mat.pants);leg.position.y=-.65;leg.castShadow=true;lg.add(leg);
-    const shoe=new THREE.Mesh(new THREE.BoxGeometry(.65,.3,.85),mat.shoe);shoe.position.set(0,-1.45,.13);lg.add(shoe);
-  });
-  const shadow=new THREE.Mesh(new THREE.CircleGeometry(.75,16),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.22}));
-  shadow.rotation.x=-Math.PI/2;scene.add(shadow);
-  const bCv=document.createElement('canvas');bCv.width=512;bCv.height=192;
-  const bCtx=bCv.getContext('2d'),bTex=new THREE.CanvasTexture(bCv);
-  const bMesh=new THREE.Mesh(new THREE.PlaneGeometry(4.2,1.6),new THREE.MeshBasicMaterial({map:bTex,transparent:true,depthWrite:false,side:THREE.DoubleSide}));
-  bMesh.visible=false;scene.add(bMesh);
-  const nCv=document.createElement('canvas');nCv.width=256;nCv.height=56;
-  const nCtx=nCv.getContext('2d'),nTex=new THREE.CanvasTexture(nCv);
-  const nMesh=new THREE.Mesh(new THREE.PlaneGeometry(2.8,.62),new THREE.MeshBasicMaterial({map:nTex,transparent:true,depthWrite:false,side:THREE.DoubleSide}));
-  scene.add(nMesh);
-  return {mat,g,HG,LA,RA,LL,RL,shadow,bCv,bCtx,bTex,bMesh,nCv,nCtx,nTex,nMesh,bubTimer:null};
+  const LA=new THREE.Group();LA.position.set(-.92,3.1,0);g.add(LA);const RA=new THREE.Group();RA.position.set(.92,3.1,0);g.add(RA);
+  [LA,RA].forEach(ag=>{const arm=new THREE.Mesh(new THREE.BoxGeometry(.46,1.3,.46),mat.shirt);arm.position.y=-.65;arm.castShadow=true;ag.add(arm);const hand=new THREE.Mesh(new THREE.BoxGeometry(.46,.38,.46),mat.skin);hand.position.y=-1.475;ag.add(hand);});
+  const LL=new THREE.Group();LL.position.set(-.34,1.6,0);g.add(LL);const RL=new THREE.Group();RL.position.set(.34,1.6,0);g.add(RL);
+  [LL,RL].forEach(lg=>{const leg=new THREE.Mesh(new THREE.BoxGeometry(.58,1.3,.58),mat.pants);leg.position.y=-.65;leg.castShadow=true;lg.add(leg);const shoe=new THREE.Mesh(new THREE.BoxGeometry(.65,.3,.85),mat.shoe);shoe.position.set(0,-1.45,.13);lg.add(shoe);});
+  const shadow=new THREE.Mesh(new THREE.CircleGeometry(.75,16),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:.22}));shadow.rotation.x=-Math.PI/2;scene.add(shadow);
+  const bCv=document.createElement('canvas');bCv.width=512;bCv.height=192;const bCtx=bCv.getContext('2d'),bTex=new THREE.CanvasTexture(bCv);
+  const bMesh=new THREE.Mesh(new THREE.PlaneGeometry(4.2,1.6),new THREE.MeshBasicMaterial({map:bTex,transparent:true,depthWrite:false,side:THREE.DoubleSide}));bMesh.visible=false;scene.add(bMesh);
+  const nCv=document.createElement('canvas');nCv.width=256;nCv.height=56;const nCtx=nCv.getContext('2d'),nTex=new THREE.CanvasTexture(nCv);
+  const nMesh=new THREE.Mesh(new THREE.PlaneGeometry(2.8,.62),new THREE.MeshBasicMaterial({map:nTex,transparent:true,depthWrite:false,side:THREE.DoubleSide}));scene.add(nMesh);
+  return{mat,g,HG,LA,RA,LL,RL,shadow,bCv,bCtx,bTex,bMesh,nCv,nCtx,nTex,nMesh,bubTimer:null};
 }
 
 // ═════════════════════════════════════════
 //  OWN PLAYER STATE
 // ═════════════════════════════════════════
-let myIP=null, myProfile=null, myVisual=null;
-const ST={
-  pos:new THREE.Vector3(),velY:0,grounded:true,facing:0,
-  isMoving:false,isRunning:false,specialAnim:null,specialTime:0,prevAnim:'',
-  canDoubleJump:false,isDoubleJump:false,
-};
+let myIP=null,myProfile=null,myVisual=null;
+const ST={pos:new THREE.Vector3(),velY:0,grounded:true,facing:0,isMoving:false,isRunning:false,specialAnim:null,specialTime:0,prevAnim:'',canDoubleJump:false,isDoubleJump:false};
 
-// ═════════════════════════════════════════
-//  REMOTE PLAYERS
-// ═════════════════════════════════════════
-const remotes=new Map(); // ip → {vis, name, buf:{x,y,z,facing,anim}, facing, lastSeen}
-
+const remotes=new Map();
 function createOrUpdateRemote(d){
   if(!d.ip||d.ip===myIP)return;
   if(!remotes.has(d.ip)){
     const pr=ipToProfile(d.ip);
     const vis=buildChar({skin:d.skin||pr.skin,shirt:d.shirt||pr.shirt,hat:d.hat||pr.hat,pants:d.pants||pr.pants});
-    const name=d.name||pr.name; drawNameTag(vis,name,false);
-    // place immediately
+    const name=d.name||pr.name;drawNameTag(vis,name,false);
     vis.g.position.set(d.pos_x||0,d.pos_y||0,d.pos_z||0);
     remotes.set(d.ip,{vis,name,buf:{x:d.pos_x||0,y:d.pos_y||0,z:d.pos_z||0,facing:d.facing||0,anim:d.anim||'idle'},facing:d.facing||0,lastSeen:Date.now()});
-  }else{
-    const rp=remotes.get(d.ip);
-    rp.buf={x:d.pos_x||0,y:d.pos_y||0,z:d.pos_z||0,facing:d.facing||0,anim:d.anim||'idle'};
-    rp.lastSeen=Date.now();
+  }else{const rp=remotes.get(d.ip);rp.buf={x:d.pos_x||0,y:d.pos_y||0,z:d.pos_z||0,facing:d.facing||0,anim:d.anim||'idle'};rp.lastSeen=Date.now();}
+}
+function removeRemote(ip){const rp=remotes.get(ip);if(!rp)return;[rp.vis.g,rp.vis.shadow,rp.vis.bMesh,rp.vis.nMesh].forEach(o=>scene.remove(o));remotes.delete(ip);}
+
+// ═════════════════════════════════════════
+//  WEBRTC — Low-latency p2p video + audio
+//  Uses Perfect Negotiation pattern (RFC)
+//  Signaling: Supabase webrtc_signals table
+// ═════════════════════════════════════════
+const ICE_CONFIG = {
+  iceServers: [
+    // Google public STUN — works for most networks
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
+    // Add a TURN server below for symmetric NAT support (corporate/mobile networks):
+    // { urls: 'turn:your-turn.example.com:3478', username: 'user', credential: 'pass' }
+  ],
+  iceCandidatePoolSize: 10,  // pre-gather candidates before call starts → lower latency
+  bundlePolicy: 'max-bundle', // bundle all tracks on one transport → less overhead
+  rtcpMuxPolicy: 'require'    // mux RTCP with RTP → halves port usage
+};
+
+let pc = null;           // RTCPeerConnection
+let localStream = null;  // own camera + mic stream
+let camOn = false;
+let micOn = false;
+let isPolite = false;    // acceptor = polite (can rollback); requester = impolite
+let makingOffer = false;
+let ignoreOffer = false;
+
+// ── Send signal via Supabase ───────────────
+async function sendRTCSignal(type, payload) {
+  if(!db || !myIP || !activeConvIP) return;
+  try {
+    await db.from('webrtc_signals').insert({
+      from_ip: myIP, to_ip: activeConvIP,
+      type, payload: JSON.stringify(payload)
+    });
+  } catch(e) { console.warn('[rtc] signal send failed:', e.message); }
+}
+
+// ── Create/reset peer connection ───────────
+async function startRTC(polite) {
+  if(pc) { try{ pc.close(); }catch{} }
+  isPolite = polite;
+  makingOffer = false;
+  ignoreOffer = false;
+  pc = new RTCPeerConnection(ICE_CONFIG);
+
+  // Remote track → show in remote video element
+  const remVid = document.getElementById('remote-video');
+  const remPlaceholder = document.getElementById('remote-placeholder');
+  const remLiveDot = document.getElementById('remote-live-dot');
+  pc.ontrack = e => {
+    if(remVid.srcObject !== e.streams[0]) remVid.srcObject = e.streams[0];
+    if(remPlaceholder) remPlaceholder.classList.add('hidden');
+    if(remLiveDot) remLiveDot.classList.remove('hidden');
+    document.getElementById('remote-video-wrap').classList.remove('hidden');
+    document.getElementById('av-status-bar').classList.add('hidden');
+  };
+
+  // ICE candidate → signal peer
+  pc.onicecandidate = e => {
+    if(e.candidate) sendRTCSignal('ice', e.candidate.toJSON());
+  };
+
+  // Connection state
+  pc.onconnectionstatechange = () => {
+    console.log('[rtc] state:', pc.connectionState);
+    if(pc.connectionState === 'failed') {
+      pc.restartIce(); // automatic ICE restart for reconnection
+    }
+  };
+
+  // Perfect negotiation: initiator fires offer; acceptor handles it
+  pc.onnegotiationneeded = async () => {
+    try {
+      makingOffer = true;
+      await pc.setLocalDescription(); // browser auto-creates offer
+      sendRTCSignal('offer', { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+    } catch(e) { console.error('[rtc] onnegotiationneeded error:', e); }
+    finally { makingOffer = false; }
+  };
+
+  // Add transceivers so initiator can send first offer
+  // direction 'sendrecv' allows both sending and receiving
+  pc.addTransceiver('audio', { direction: 'sendrecv' });
+  pc.addTransceiver('video', { direction: 'sendrecv' });
+
+  // Attach existing local tracks if any
+  if(localStream) {
+    localStream.getTracks().forEach(t => {
+      const sender = pc.getSenders().find(s => s.track?.kind === t.kind);
+      if(sender) sender.replaceTrack(t);
+    });
   }
 }
-function removeRemote(ip){
-  const rp=remotes.get(ip);if(!rp)return;
-  [rp.vis.g,rp.vis.shadow,rp.vis.bMesh,rp.vis.nMesh].forEach(o=>scene.remove(o));
-  remotes.delete(ip);
+
+// ── Handle incoming signal ─────────────────
+async function handleRTCSignal(sig) {
+  if(!activeConvIP || sig.from_ip !== activeConvIP) return;
+  if(!pc) await startRTC(true); // unexpected signal — become polite responder
+
+  const data = JSON.parse(sig.payload || '{}');
+
+  try {
+    if(sig.type === 'offer') {
+      // Perfect negotiation: polite peer rolls back on collision
+      const collision = makingOffer || pc.signalingState !== 'stable';
+      ignoreOffer = !isPolite && collision;
+      if(ignoreOffer) return;
+
+      await pc.setRemoteDescription(new RTCSessionDescription(data));
+      await pc.setLocalDescription(); // auto-creates answer
+      sendRTCSignal('answer', { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+
+    } else if(sig.type === 'answer') {
+      if(pc.signalingState !== 'have-local-offer') return;
+      await pc.setRemoteDescription(new RTCSessionDescription(data));
+
+    } else if(sig.type === 'ice') {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(data));
+      } catch(e) {
+        if(!ignoreOffer) console.warn('[rtc] ICE error:', e.message);
+      }
+
+    } else if(sig.type === 'hangup') {
+      stopRTC(false); // remote ended — don't send hangup back
+    }
+  } catch(e) {
+    console.error('[rtc] signal handling error:', e);
+  }
+
+  // Clean up processed signal
+  db?.from('webrtc_signals').delete().eq('id', sig.id).catch(()=>{});
+}
+
+// ── Stop RTC and release media ─────────────
+function stopRTC(sendHangup = true) {
+  if(sendHangup && activeConvIP) sendRTCSignal('hangup', {});
+  if(pc) { try{ pc.close(); }catch{} pc = null; }
+  if(localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+  camOn = false; micOn = false;
+  const locVid = document.getElementById('local-video');
+  if(locVid) locVid.srcObject = null;
+  const remVid = document.getElementById('remote-video');
+  if(remVid) remVid.srcObject = null;
+  document.getElementById('local-video-wrap').classList.add('hidden');
+  document.getElementById('remote-video-wrap').classList.add('hidden');
+  document.getElementById('av-status-bar').classList.add('hidden');
+  document.getElementById('av-overlay').classList.add('hidden');
+  document.getElementById('av-controls').classList.add('hidden');
+  updateAVUI();
+}
+
+// ── Show AV overlay when conversation starts ──
+function showAVOverlay(remoteName) {
+  document.getElementById('av-overlay').classList.remove('hidden');
+  document.getElementById('av-controls').classList.remove('hidden');
+  document.getElementById('av-status-bar').classList.remove('hidden');
+  const nameLabel = document.getElementById('av-conv-name');
+  if(nameLabel) nameLabel.textContent = `In conversation with ${remoteName}`;
+  const remoteNameLabel = document.getElementById('remote-name-label');
+  if(remoteNameLabel) remoteNameLabel.textContent = remoteName;
+  document.getElementById('remote-video-name').textContent = remoteName;
+}
+
+// ── Toggle camera on/off ───────────────────
+async function toggleCamera() {
+  camOn = !camOn;
+  if(camOn) {
+    try {
+      const vidStream = await navigator.mediaDevices.getUserMedia({
+        video: { width:{ideal:640}, height:{ideal:480}, frameRate:{ideal:30,max:30} }
+      });
+      if(!localStream) localStream = new MediaStream();
+      vidStream.getVideoTracks().forEach(t => {
+        // Remove old video track if any
+        localStream.getVideoTracks().forEach(old => { old.stop(); localStream.removeTrack(old); });
+        localStream.addTrack(t);
+      });
+      // Show local preview
+      const locVid = document.getElementById('local-video');
+      locVid.srcObject = localStream;
+      document.getElementById('local-video-wrap').classList.remove('hidden');
+      // Add track to peer connection
+      if(pc) {
+        const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+        if(sender) await sender.replaceTrack(vidStream.getVideoTracks()[0]);
+        // onnegotiationneeded fires if sender didn't exist
+      }
+    } catch(e) {
+      console.error('[cam] getUserMedia failed:', e);
+      camOn = false;
+    }
+  } else {
+    localStream?.getVideoTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
+    document.getElementById('local-video-wrap').classList.add('hidden');
+    if(pc) {
+      const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+      if(sender) await sender.replaceTrack(null);
+    }
+  }
+  updateAVUI();
+}
+
+// ── Toggle mic on/off ──────────────────────
+async function toggleMic() {
+  micOn = !micOn;
+  if(micOn) {
+    try {
+      const audStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+      });
+      if(!localStream) localStream = new MediaStream();
+      audStream.getAudioTracks().forEach(t => {
+        localStream.getAudioTracks().forEach(old => { old.stop(); localStream.removeTrack(old); });
+        localStream.addTrack(t);
+      });
+      if(pc) {
+        const sender = pc.getSenders().find(s => s.track?.kind === 'audio');
+        if(sender) await sender.replaceTrack(audStream.getAudioTracks()[0]);
+      }
+    } catch(e) {
+      console.error('[mic] getUserMedia failed:', e);
+      micOn = false;
+    }
+  } else {
+    // Mute: keep track but disable it (preserves connection)
+    localStream?.getAudioTracks().forEach(t => { t.enabled = false; });
+  }
+  updateAVUI();
+}
+
+// ── Update button states ───────────────────
+function updateAVUI() {
+  const camBtn = document.getElementById('btn-cam');
+  const micBtn = document.getElementById('btn-mic');
+  if(camBtn) {
+    camBtn.innerHTML = camOn
+      ? '<span>📷</span><span>Cam On</span>'
+      : '<span>📷</span><span>Cam Off</span>';
+    camBtn.classList.toggle('bg-blue-700/90', camOn);
+    camBtn.classList.toggle('border-blue-500', camOn);
+    camBtn.classList.toggle('bg-gray-900/95', !camOn);
+    camBtn.classList.toggle('border-gray-600', !camOn);
+  }
+  if(micBtn) {
+    micBtn.innerHTML = micOn
+      ? '<span>🎤</span><span>Mic On</span>'
+      : '<span>🎤</span><span>Muted</span>';
+    micBtn.classList.toggle('bg-green-700/90', micOn);
+    micBtn.classList.toggle('border-green-500', micOn);
+    micBtn.classList.toggle('bg-gray-900/95', !micOn);
+    micBtn.classList.toggle('border-gray-600', !micOn);
+  }
 }
 
 // ═════════════════════════════════════════
@@ -691,21 +768,20 @@ addEventListener('keydown',e=>{
   if(inputFocused)return;if(keys[e.code])return;keys[e.code]=true;
   switch(e.code){
     case 'Space':
-      // Fix: no jump during dance or sit
-      if(ST.specialAnim==='dance'||ST.specialAnim==='sit') break;
+      if(ST.specialAnim==='dance'||ST.specialAnim==='sit')break;
       if(ST.grounded){ST.velY=JUMPV;ST.grounded=false;ST.canDoubleJump=true;ST.isDoubleJump=false;}
       else if(ST.canDoubleJump){ST.velY=JUMPV2;ST.canDoubleJump=false;ST.isDoubleJump=true;}
       e.preventDefault();break;
-    case 'KeyE':ST.specialAnim=ST.specialAnim==='wave' ?null:'wave'; ST.specialTime=0;break;
+    case 'KeyE':ST.specialAnim=ST.specialAnim==='wave'?null:'wave';ST.specialTime=0;break;
     case 'KeyR':ST.specialAnim=ST.specialAnim==='dance'?null:'dance';ST.specialTime=0;break;
-    case 'KeyF':ST.specialAnim=ST.specialAnim==='sit'  ?null:'sit';  ST.specialTime=0;break;
-    case 'KeyQ': grabProp(); break;
+    case 'KeyF':ST.specialAnim=ST.specialAnim==='sit'?null:'sit';ST.specialTime=0;break;
+    case 'KeyQ':grabProp();break;
   }
 });
 addEventListener('keyup',e=>{delete keys[e.code];});
 
 // ═════════════════════════════════════════
-//  CAMERA  (default: zoomed out, wide view)
+//  CAMERA ORBIT
 // ═════════════════════════════════════════
 let camTheta=0.3,camPhi=0.22,camRadius=16;
 const camTgt=new THREE.Vector3(0,2.5,0);
@@ -717,214 +793,71 @@ canvas.addEventListener('wheel',e=>{camRadius=Math.max(5,Math.min(24,camRadius+e
 let ltx=0,lty=0;
 canvas.addEventListener('touchstart',e=>{ltx=e.touches[0].clientX;lty=e.touches[0].clientY;},{passive:true});
 canvas.addEventListener('touchmove',e=>{camTheta-=(e.touches[0].clientX-ltx)*.01;camPhi=Math.max(.06,Math.min(1.28,camPhi-(e.touches[0].clientY-lty)*.008));ltx=e.touches[0].clientX;lty=e.touches[0].clientY;e.preventDefault();},{passive:false});
-document.getElementById('btn-cust').addEventListener('click',()=>document.getElementById('panel-cust').classList.toggle('hidden'));
+
+const _custBtn=document.getElementById('btn-cust');
+if(_custBtn)_custBtn.addEventListener('click',()=>document.getElementById('panel-cust').classList.toggle('hidden'));
 
 function setColor(part,hex){
   if(!myVisual)return;
-  if(part==='shirt')myVisual.mat.shirt.color.setHex(hex);
-  if(part==='hat')  myVisual.mat.hat.color.setHex(hex);
-  if(part==='skin') myVisual.mat.skin.color.setHex(hex);
-  if(part==='pants')myVisual.mat.pants.color.setHex(hex);
+  if(part==='shirt')myVisual.mat.shirt.color.setHex(hex);if(part==='hat')myVisual.mat.hat.color.setHex(hex);
+  if(part==='skin')myVisual.mat.skin.color.setHex(hex);if(part==='pants')myVisual.mat.pants.color.setHex(hex);
   if(db&&myIP){const u={};u[part]=hex;db.from('players').update(u).eq('ip',myIP);}
 }
 
 // ═════════════════════════════════════════
-//  GRAB / THROW SYSTEM
+//  GRAB / THROW
 // ═════════════════════════════════════════
-let heldProp = null; // reference to the currently held prop object
+let heldProp=null;
+function nearestFreeProp(){let best=null,bestDist=Infinity;for(const p of propList){if(p.heldBy)continue;const dx=ST.pos.x-p.group.position.x,dz=ST.pos.z-p.group.position.z,dist=Math.sqrt(dx*dx+dz*dz);if(dist<GRAB_RANGE&&dist<bestDist){best=p;bestDist=dist;}}return best;}
+function grabProp(){if(heldProp){throwProp();return;}const p=nearestFreeProp();if(!p)return;heldProp=p;p.heldBy='player';p.velX=p.velY=p.velZ=0;p.angVel=0;p.labelMesh.visible=false;showHint('Press Q to throw!',1800);}
+function throwProp(){if(!heldProp)return;const p=heldProp,d=ST.facing;p.velX=Math.sin(d)*THROW_SPEED;p.velZ=Math.cos(d)*THROW_SPEED;p.velY=7;p.angVel=4.5;p.grounded=false;p.heldBy=null;heldProp=null;showHint('',0);}
 
-function nearestFreeProp(){
-  let best=null, bestDist=Infinity;
-  for(const p of propList){
-    if(p.heldBy) continue;
-    const dx=ST.pos.x-p.group.position.x;
-    const dz=ST.pos.z-p.group.position.z;
-    const dist=Math.sqrt(dx*dx+dz*dz);
-    if(dist<GRAB_RANGE && dist<bestDist){ best=p; bestDist=dist; }
-  }
-  return best;
-}
-
-function grabProp(){
-  if(heldProp){ throwProp(); return; } // toggle: grab again = throw
-  const p=nearestFreeProp(); if(!p) return;
-  heldProp=p;
-  p.heldBy='player';
-  p.velX=p.velY=p.velZ=0;
-  p.angVel=0;
-  p.labelMesh.visible=false; // hide label while held
-  showHint('Press Q to throw!', 1800);
-}
-
-function throwProp(){
-  if(!heldProp) return;
-  const p=heldProp;
-  // Throw in the direction the character is facing with upward arc
-  const throwDir = ST.facing;
-  p.velX = Math.sin(throwDir) * THROW_SPEED;
-  p.velZ = Math.cos(throwDir) * THROW_SPEED;
-  p.velY = 7;          // upward arc
-  p.angVel = 4.5;      // spin on throw
-  p.grounded = false;
-  p.heldBy = null;
-  heldProp = null;
-  showHint('', 0);
-}
-
-// ── Prop physics update ────────────────────
 function updateProps(dt){
   for(const p of propList){
-
-    // ── HELD: snap to character's actual right hand world position ──
-    if(p.heldBy==='player' && myVisual){
-      // Right shoulder pivot is at x=+0.92, y=3.10 in character local space.
-      // Hand tip (bottom of hand mesh) is 1.475 units below pivot = y=1.625 from feet.
-      // We compute the world position of the right hand using the character's facing angle.
-      const cos = Math.cos(ST.facing), sin = Math.sin(ST.facing);
-      // Shoulder offset in character local: (+0.92, 3.10, 0)
-      // Arm hangs down when relaxed, but during grab RA.rotation.z stays 0 → hand at y=1.625
-      // We add a forward reach so the prop appears in front of the hand
-      const shldLocalX =  0.92; // right shoulder local x
-      const shldLocalY =  3.10; // shoulder height
-      const handLocalY =  1.625; // hand tip below shoulder
-      const reachZ     =  0.55;  // forward reach (local z = in front of character)
-
-      // Rotate local offsets by character facing
-      const wx = ST.pos.x + cos * shldLocalX  + sin * reachZ;
-      const wz = ST.pos.z - sin * shldLocalX  + cos * reachZ;
-      const wy = ST.pos.y + handLocalY;
-
-      p.group.position.set(wx, wy, wz);
-      p.ry += dt * 1.8; // gentle spin while held
-      p.group.rotation.y = p.ry;
-      p.labelMesh.visible = false;
-      continue;
+    if(p.heldBy==='player'&&myVisual){
+      const cos=Math.cos(ST.facing),sin=Math.sin(ST.facing);
+      p.group.position.set(ST.pos.x+cos*0.92+sin*0.55,ST.pos.y+1.625,ST.pos.z-sin*0.92+cos*0.55);
+      p.ry+=dt*1.8;p.group.rotation.y=p.ry;p.labelMesh.visible=false;continue;
     }
-
-    // ── FLYING / BOUNCING ──────────────────────────────────
     if(!p.grounded){
-      p.velY -= PROP_GRAVITY*dt;
-      p.group.position.x += p.velX*dt;
-      p.group.position.y += p.velY*dt;
-      p.group.position.z += p.velZ*dt;
-      p.ry += p.angVel*dt;
-      p.group.rotation.x += p.angVel*0.6*dt;
-      p.group.rotation.y = p.ry;
-
-      // Fix 3: hit detection — check if flying prop intersects MY character
-      if(myVisual && !p._hitCooldown){
-        const dx = p.group.position.x - ST.pos.x;
-        const dz = p.group.position.z - ST.pos.z;
-        const dy = p.group.position.y - (ST.pos.y + 2.2); // aim at torso height
-        const dist2 = dx*dx + dz*dz;
-        if(dist2 < 1.5 && Math.abs(dy) < 2.2){ // hit radius 1.5 units, torso height window
-          // Knockback: push character in prop's travel direction
-          const speed = Math.sqrt(p.velX*p.velX+p.velZ*p.velZ);
-          if(speed > 2){
-            ST.pos.x += (p.velX/speed)*1.8;
-            ST.pos.z += (p.velZ/speed)*1.8;
-            ST.velY   = 4.5; // small upward pop
-            ST.grounded = false;
-            ST.specialAnim = null; // cancel any emote
-            // Brief stun: force stumble animation via a temporary flag
-            ST._stunUntil = clock.getElapsedTime() + 0.85;
-            p._hitCooldown = true;
-            setTimeout(()=>p._hitCooldown=false, 1200);
-          }
-        }
-      }
-
-      const surf = getSurface(p.group.position.x, p.group.position.z);
-      if(p.group.position.y <= surf){
-        p.group.position.y = surf;
-        p.velY *= -0.35;
-        p.velX *= 0.65;
-        p.velZ *= 0.65;
-        p.angVel *= 0.55;
-        if(Math.abs(p.velY)<0.5 && Math.sqrt(p.velX**2+p.velZ**2)<0.4){
-          p.velX=p.velY=p.velZ=p.angVel=0;
-          p.grounded=true;
-          p.labelMesh.visible=true;
-        }
-      }
-      if(p.group.position.x>20){p.group.position.x=20;p.velX*=-0.6;}
-      if(p.group.position.x<-20){p.group.position.x=-20;p.velX*=-0.6;}
-      if(p.group.position.z>20){p.group.position.z=20;p.velZ*=-0.6;}
-      if(p.group.position.z<-20){p.group.position.z=-20;p.velZ*=-0.6;}
+      p.velY-=PROP_GRAVITY*dt;p.group.position.x+=p.velX*dt;p.group.position.y+=p.velY*dt;p.group.position.z+=p.velZ*dt;
+      p.ry+=p.angVel*dt;p.group.rotation.x+=p.angVel*0.6*dt;p.group.rotation.y=p.ry;
+      if(myVisual&&!p._hitCooldown){const dx=p.group.position.x-ST.pos.x,dz=p.group.position.z-ST.pos.z,dy=p.group.position.y-(ST.pos.y+2.2);if(dx*dx+dz*dz<1.5&&Math.abs(dy)<2.2){const speed=Math.sqrt(p.velX*p.velX+p.velZ*p.velZ);if(speed>2){ST.pos.x+=(p.velX/speed)*1.8;ST.pos.z+=(p.velZ/speed)*1.8;ST.velY=4.5;ST.grounded=false;ST.specialAnim=null;ST._stunUntil=clock.getElapsedTime()+0.85;p._hitCooldown=true;setTimeout(()=>p._hitCooldown=false,1200);}}}
+      const surf=getSurface(p.group.position.x,p.group.position.z);
+      if(p.group.position.y<=surf){p.group.position.y=surf;p.velY*=-0.35;p.velX*=0.65;p.velZ*=0.65;p.angVel*=0.55;if(Math.abs(p.velY)<0.5&&Math.sqrt(p.velX**2+p.velZ**2)<0.4){p.velX=p.velY=p.velZ=p.angVel=0;p.grounded=true;p.labelMesh.visible=true;}}
+      if(p.group.position.x>20){p.group.position.x=20;p.velX*=-0.6;}if(p.group.position.x<-20){p.group.position.x=-20;p.velX*=-0.6;}
+      if(p.group.position.z>20){p.group.position.z=20;p.velZ*=-0.6;}if(p.group.position.z<-20){p.group.position.z=-20;p.velZ*=-0.6;}
     }
-
-    // ── RESTING: update label billboard position ───────────
-    if(p.grounded && !p.heldBy){
-      const lx=p.group.position.x, lz=p.group.position.z;
-      const surf=getSurface(lx,lz);
-      p.labelMesh.position.set(lx, surf+0.18, lz);
-      p.labelMesh.lookAt(camera.position);
-    }
+    if(p.grounded&&!p.heldBy){const lx=p.group.position.x,lz=p.group.position.z;p.labelMesh.position.set(lx,getSurface(lx,lz)+0.18,lz);p.labelMesh.lookAt(camera.position);}
   }
 }
 
-// ── HUD grab hint (bottom-left small toast) ─
 let _hintTimer=null;
-function showHint(msg, dur){
-  let el=document.getElementById('grab-hint');
-  if(!el){ el=document.createElement('div'); el.id='grab-hint';
-    el.className='absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-gray-900/90 backdrop-blur border border-blue-700 text-blue-200 text-xs font-bold px-4 py-2 rounded-xl pointer-events-none transition-opacity duration-300';
-    document.querySelector('.relative').appendChild(el); }
-  if(!msg){el.style.opacity='0';return;}
-  el.textContent=msg; el.style.opacity='1';
-  clearTimeout(_hintTimer);
-  if(dur>0) _hintTimer=setTimeout(()=>el.style.opacity='0',dur);
-}
-
-function checkNearHint(){
-  if(heldProp){
-    showHint('🤜 [Q] Throw',0);
-    const gi=document.getElementById('m-grab-icon'), gl=document.getElementById('m-grab-lbl');
-    if(gi){gi.textContent='🤜';} if(gl){gl.textContent='Throw';}
-    return;
-  }
-  const near=nearestFreeProp();
-  const gi=document.getElementById('m-grab-icon'), gl=document.getElementById('m-grab-lbl');
-  if(gi){gi.textContent='🤚';} if(gl){gl.textContent='Grab';}
-  if(near){showHint(`🤚 [Q] Grab ${near.name}`,0);}
-  else{showHint('',0);}
-}
+function showHint(msg,dur){let el=document.getElementById('grab-hint');if(!el){el=document.createElement('div');el.id='grab-hint';el.className='absolute bottom-20 left-1/2 -translate-x-1/2 z-20 bg-gray-900/90 backdrop-blur border border-blue-700 text-blue-200 text-xs font-bold px-4 py-2 rounded-xl pointer-events-none transition-opacity duration-300';document.querySelector('.relative').appendChild(el);}if(!msg){el.style.opacity='0';return;}el.textContent=msg;el.style.opacity='1';clearTimeout(_hintTimer);if(dur>0)_hintTimer=setTimeout(()=>el.style.opacity='0',dur);}
+function checkNearHint(){if(heldProp){showHint('🤜 [Q] Throw',0);const gi=document.getElementById('m-grab-icon'),gl=document.getElementById('m-grab-lbl');if(gi)gi.textContent='🤜';if(gl)gl.textContent='Throw';return;}const near=nearestFreeProp();const gi=document.getElementById('m-grab-icon'),gl=document.getElementById('m-grab-lbl');if(gi)gi.textContent='🤚';if(gl)gl.textContent='Grab';if(near)showHint(`🤚 [Q] Grab ${near.name}`,0);else showHint('',0);}
 
 // ═════════════════════════════════════════
 //  PHYSICS
 // ═════════════════════════════════════════
+let joystickX=0,joystickY=0,joystickRunMode=false;
+
 function updatePhysics(dt){
-  dt=Math.min(dt,.05);
-  let mvF=0,mvR=0;
-  if(!inputFocused){
-    if(keys['KeyW']||keys['ArrowUp'])mvF+=1;if(keys['KeyS']||keys['ArrowDown'])mvF-=1;
-    if(keys['KeyD']||keys['ArrowRight'])mvR+=1;if(keys['KeyA']||keys['ArrowLeft'])mvR-=1;
-  }
-  // Mix in virtual joystick: screen-Y-down = game-backward, so negate joystickY
-  mvF += -joystickY;
-  mvR += joystickX;
-  // Clamp combined input to [-1,1] per axis
-  mvF = Math.max(-1, Math.min(1, mvF));
-  mvR = Math.max(-1, Math.min(1, mvR));
-  ST.isMoving=mvF!==0||mvR!==0;
-  ST.isRunning=ST.isMoving&&(!!(keys['ShiftLeft']||keys['ShiftRight'])||joystickRunMode);
+  dt=Math.min(dt,.05);let mvF=0,mvR=0;
+  if(!inputFocused){if(keys['KeyW']||keys['ArrowUp'])mvF+=1;if(keys['KeyS']||keys['ArrowDown'])mvF-=1;if(keys['KeyD']||keys['ArrowRight'])mvR+=1;if(keys['KeyA']||keys['ArrowLeft'])mvR-=1;}
+  mvF+=(-joystickY);mvR+=joystickX;mvF=Math.max(-1,Math.min(1,mvF));mvR=Math.max(-1,Math.min(1,mvR));
+  ST.isMoving=mvF!==0||mvR!==0;ST.isRunning=ST.isMoving&&(!!(keys['ShiftLeft']||keys['ShiftRight'])||joystickRunMode);
   if(ST.isMoving&&ST.specialAnim!=='fall')ST.specialAnim=null;
   if(!ST.grounded)ST.velY-=GRAV*dt;
   if(ST.isMoving&&ST.specialAnim!=='sit'&&ST.specialAnim!=='fall'){
     const len=Math.sqrt(mvF*mvF+mvR*mvR),nF=mvF/len,nR=mvR/len;
     const fX=-Math.sin(camTheta),fZ=-Math.cos(camTheta),rX=Math.cos(camTheta),rZ=-Math.sin(camTheta);
     const wX=fX*nF+rX*nR,wZ=fZ*nF+rZ*nR,spd=ST.isRunning?RUNSP:WALKSP;
-    const nx=ST.pos.x+wX*spd*dt,sx=getSurface(nx,ST.pos.z);
-    if(sx-ST.pos.y<=MAXSTEP){ST.pos.x=nx;if(ST.grounded&&sx>ST.pos.y)ST.pos.y=sx;}
-    const nz=ST.pos.z+wZ*spd*dt,sz=getSurface(ST.pos.x,nz);
-    if(sz-ST.pos.y<=MAXSTEP){ST.pos.z=nz;if(ST.grounded&&sz>ST.pos.y)ST.pos.y=sz;}
-    const tgt=Math.atan2(wX,wZ);let df=tgt-ST.facing;
-    while(df>Math.PI)df-=2*Math.PI;while(df<-Math.PI)df+=2*Math.PI;
-    ST.facing+=df*Math.min(1,16*dt);
+    const nx=ST.pos.x+wX*spd*dt,sx=getSurface(nx,ST.pos.z);if(sx-ST.pos.y<=MAXSTEP){ST.pos.x=nx;if(ST.grounded&&sx>ST.pos.y)ST.pos.y=sx;}
+    const nz=ST.pos.z+wZ*spd*dt,sz=getSurface(ST.pos.x,nz);if(sz-ST.pos.y<=MAXSTEP){ST.pos.z=nz;if(ST.grounded&&sz>ST.pos.y)ST.pos.y=sz;}
+    const tgt=Math.atan2(wX,wZ);let df=tgt-ST.facing;while(df>Math.PI)df-=2*Math.PI;while(df<-Math.PI)df+=2*Math.PI;ST.facing+=df*Math.min(1,16*dt);
   }
   const nY=ST.pos.y+ST.velY*dt,surf=getSurface(ST.pos.x,ST.pos.z);
-  if(nY<=surf){ST.pos.y=surf;ST.velY=0;ST.grounded=true;ST.canDoubleJump=false;ST.isDoubleJump=false;}
-  else{ST.pos.y=nY;ST.grounded=false;}
+  if(nY<=surf){ST.pos.y=surf;ST.velY=0;ST.grounded=true;ST.canDoubleJump=false;ST.isDoubleJump=false;}else{ST.pos.y=nY;ST.grounded=false;}
   if(ST.pos.y<-12){ST.pos.set(0,0,0);ST.velY=0;ST.grounded=true;ST.specialAnim=null;}
   ST.pos.x=Math.max(-20,Math.min(20,ST.pos.x));ST.pos.z=Math.max(-20,Math.min(20,ST.pos.z));
   document.getElementById('hud-y').textContent=ST.pos.y.toFixed(2);
@@ -936,90 +869,23 @@ function updatePhysics(dt){
 //  ANIMATION
 // ═════════════════════════════════════════
 const AINFO={idle:{i:'😐',l:'Idle'},walk:{i:'🚶',l:'Walk'},run:{i:'🏃',l:'Run'},jump:{i:'⬆️',l:'Jump'},wave:{i:'👋',l:'Wave'},dance:{i:'💃',l:'Dance'},sit:{i:'🪑',l:'Sit'},stun:{i:'💥',l:'Stunned!'}};
-
-function getMyAnim(){
-  // Stun override: hit by thrown prop
-  if(ST._stunUntil && clock.getElapsedTime() < ST._stunUntil) return 'stun';
-  if(ST.specialAnim)return ST.specialAnim;
-  if(!ST.grounded)return'jump';
-  if(ST.isRunning)return'run';
-  if(ST.isMoving)return'walk';
-  return'idle';
-}
-
-function resetPose(v){
-  v.LA.rotation.set(0,0,0); v.RA.rotation.set(0,0,0);
-  v.LL.rotation.set(0,0,0); v.RL.rotation.set(0,0,0);
-  v.HG.rotation.set(0,0,0); v.g.rotation.set(0,0,0); // clears stun body-sway z too
-}
+function getMyAnim(){if(ST._stunUntil&&clock.getElapsedTime()<ST._stunUntil)return'stun';if(ST.specialAnim)return ST.specialAnim;if(!ST.grounded)return'jump';if(ST.isRunning)return'run';if(ST.isMoving)return'walk';return'idle';}
+function resetPose(v){v.LA.rotation.set(0,0,0);v.RA.rotation.set(0,0,0);v.LL.rotation.set(0,0,0);v.RL.rotation.set(0,0,0);v.HG.rotation.set(0,0,0);v.g.rotation.set(0,0,0);}
 
 function applyAnim(vis,pos,facing,anim,sTime,isDJ,t){
-  resetPose(vis);
-  const s=sTime;
-  if(anim==='idle'){
-    vis.g.position.y=pos.y+Math.sin(t*1.2)*.07;vis.HG.rotation.y=Math.sin(t*.7)*.18;vis.HG.rotation.z=Math.sin(t*.5)*.04;
-    vis.LA.rotation.z=Math.sin(t*1.2)*.04+.1;vis.RA.rotation.z=-(Math.sin(t*1.2)*.04+.1);
-  }else if(anim==='walk'){
-    const sw=.55,sp=3.2;vis.LA.rotation.x=Math.sin(t*sp)*sw;vis.RA.rotation.x=-Math.sin(t*sp)*sw;
-    vis.LL.rotation.x=-Math.sin(t*sp)*sw;vis.RL.rotation.x=Math.sin(t*sp)*sw;
-    vis.LA.rotation.z=.07;vis.RA.rotation.z=-.07;vis.HG.rotation.y=Math.sin(t*sp*.5)*.08;
-    vis.g.position.y=pos.y+Math.abs(Math.sin(t*sp))*.09;
-  }else if(anim==='run'){
-    // Fix 4: no arm z-splay, slight lean only, head neutral
-    const sw=1,sp=6.5;
-    vis.LA.rotation.x= Math.sin(t*sp)*sw; vis.RA.rotation.x=-Math.sin(t*sp)*sw;
-    vis.LA.rotation.z=0; vis.RA.rotation.z=0;
-    vis.LL.rotation.x=-Math.sin(t*sp)*sw; vis.RL.rotation.x= Math.sin(t*sp)*sw;
-    vis.g.position.y=pos.y+Math.abs(Math.sin(t*sp))*.22;
-    vis.g.rotation.x=-0.08; // reduced lean — character stays upright
-  }else if(anim==='jump'){
-    const ph=Math.max(0,Math.min(1,(pos.y-getSurface(pos.x,pos.z))*.4));
-    const uf=isDJ?1.4:1;
-    vis.LA.rotation.z=(ph*.6+.14)*uf; vis.RA.rotation.z=-(ph*.6+.14)*uf;
-    vis.LA.rotation.x=-ph*.4; vis.RA.rotation.x=-ph*.4;
-    // Fix 5: super jump — tuck legs straight up, no z-splay
-    if(isDJ){
-      vis.LL.rotation.x=-0.95; vis.RL.rotation.x=-0.95; // legs tucked straight up
-      vis.LL.rotation.z=0;     vis.RL.rotation.z=0;     // NO splaying
-    }else{
-      vis.LL.rotation.x=-ph*.5; vis.RL.rotation.x=-ph*.5;
-    }
-    vis.HG.rotation.x=-ph*.2;
-    vis.g.position.y=pos.y;
-  }else if(anim==='wave'){
-    // Fix 1: arm straight UP (rotation.z ≈ PI puts arm vertical),
-    // wave = oscillate rotation.z around that "up" position → left-right motion above head
-    vis.RA.rotation.z = Math.PI * 0.88 + Math.sin(s*4)*0.38; // up + wave side-to-side
-    vis.RA.rotation.x = 0.12;                                  // slight forward so arm is in front of head
-    vis.LA.rotation.z = 0.15;                                  // left arm neutral/relaxed
-    vis.HG.rotation.y = Math.sin(s*2)*0.14;                   // head tracks wave rhythm
-    vis.g.position.y  = pos.y + Math.sin(s*2)*.04;
-  }else if(anim==='dance'){
-    const sp=5.5;vis.LA.rotation.x=Math.sin(s*sp)*1.15;vis.RA.rotation.x=-Math.sin(s*sp)*1.15;
-    vis.LA.rotation.z=Math.sin(s*sp*.5)*.55+.35;vis.RA.rotation.z=-(Math.sin(s*sp*.5)*.55+.35);
-    vis.LL.rotation.x=Math.sin(s*sp)*.55;vis.RL.rotation.x=-Math.sin(s*sp)*.55;
-    vis.HG.rotation.y=Math.sin(s*3.5)*.22;vis.HG.rotation.z=Math.cos(s*3)*.12;
-    vis.g.position.y=pos.y+Math.abs(Math.sin(s*sp))*.18;
-  }else if(anim==='sit'){
-    vis.LL.rotation.x=-Math.PI/2;vis.RL.rotation.x=-Math.PI/2;
-    vis.LA.rotation.z=.5;vis.RA.rotation.z=-.5;vis.HG.rotation.y=Math.sin(s*.8)*.12;vis.g.position.y=pos.y-1.55;
-  }else if(anim==='stun'){
-    // Fix 3: wobbly stumble pose — arms splayed, legs bent, head lolling
-    vis.LA.rotation.z =  Math.PI*0.55 + Math.sin(s*8)*0.25;
-    vis.RA.rotation.z = -Math.PI*0.55 - Math.sin(s*8)*0.25;
-    vis.LA.rotation.x =  Math.sin(s*7)*0.3;
-    vis.RA.rotation.x = -Math.sin(s*7)*0.3;
-    vis.LL.rotation.x =  0.45 + Math.sin(s*9)*0.2;
-    vis.RL.rotation.x = -0.3  + Math.sin(s*9+1)*0.2;
-    vis.HG.rotation.z =  Math.sin(s*6)*0.35;
-    vis.HG.rotation.y =  Math.sin(s*5)*0.2;
-    vis.g.rotation.z  =  Math.sin(s*7)*0.18; // whole body sway
-    vis.g.position.y  = pos.y + Math.sin(s*6)*0.06;
-  }else{vis.g.position.y=pos.y;}
+  resetPose(vis);const s=sTime;
+  if(anim==='idle'){vis.g.position.y=pos.y+Math.sin(t*1.2)*.07;vis.HG.rotation.y=Math.sin(t*.7)*.18;vis.HG.rotation.z=Math.sin(t*.5)*.04;vis.LA.rotation.z=Math.sin(t*1.2)*.04+.1;vis.RA.rotation.z=-(Math.sin(t*1.2)*.04+.1);}
+  else if(anim==='walk'){const sw=.55,sp=3.2;vis.LA.rotation.x=Math.sin(t*sp)*sw;vis.RA.rotation.x=-Math.sin(t*sp)*sw;vis.LL.rotation.x=-Math.sin(t*sp)*sw;vis.RL.rotation.x=Math.sin(t*sp)*sw;vis.LA.rotation.z=.07;vis.RA.rotation.z=-.07;vis.HG.rotation.y=Math.sin(t*sp*.5)*.08;vis.g.position.y=pos.y+Math.abs(Math.sin(t*sp))*.09;}
+  else if(anim==='run'){const sw=1,sp=6.5;vis.LA.rotation.x=Math.sin(t*sp)*sw;vis.RA.rotation.x=-Math.sin(t*sp)*sw;vis.LA.rotation.z=0;vis.RA.rotation.z=0;vis.LL.rotation.x=-Math.sin(t*sp)*sw;vis.RL.rotation.x=Math.sin(t*sp)*sw;vis.g.position.y=pos.y+Math.abs(Math.sin(t*sp))*.22;vis.g.rotation.x=-0.08;}
+  else if(anim==='jump'){const ph=Math.max(0,Math.min(1,(pos.y-getSurface(pos.x,pos.z))*.4)),uf=isDJ?1.4:1;vis.LA.rotation.z=(ph*.6+.14)*uf;vis.RA.rotation.z=-(ph*.6+.14)*uf;vis.LA.rotation.x=-ph*.4;vis.RA.rotation.x=-ph*.4;if(isDJ){vis.LL.rotation.x=-0.95;vis.RL.rotation.x=-0.95;vis.LL.rotation.z=0;vis.RL.rotation.z=0;}else{vis.LL.rotation.x=-ph*.5;vis.RL.rotation.x=-ph*.5;}vis.HG.rotation.x=-ph*.2;vis.g.position.y=pos.y;}
+  else if(anim==='wave'){vis.RA.rotation.z=Math.PI*0.88+Math.sin(s*4)*0.38;vis.RA.rotation.x=0.12;vis.LA.rotation.z=0.15;vis.HG.rotation.y=Math.sin(s*2)*0.14;vis.g.position.y=pos.y+Math.sin(s*2)*.04;}
+  else if(anim==='dance'){const sp=5.5;vis.LA.rotation.x=Math.sin(s*sp)*1.15;vis.RA.rotation.x=-Math.sin(s*sp)*1.15;vis.LA.rotation.z=Math.sin(s*sp*.5)*.55+.35;vis.RA.rotation.z=-(Math.sin(s*sp*.5)*.55+.35);vis.LL.rotation.x=Math.sin(s*sp)*.55;vis.RL.rotation.x=-Math.sin(s*sp)*.55;vis.HG.rotation.y=Math.sin(s*3.5)*.22;vis.HG.rotation.z=Math.cos(s*3)*.12;vis.g.position.y=pos.y+Math.abs(Math.sin(s*sp))*.18;}
+  else if(anim==='sit'){vis.LL.rotation.x=-Math.PI/2;vis.RL.rotation.x=-Math.PI/2;vis.LA.rotation.z=.5;vis.RA.rotation.z=-.5;vis.HG.rotation.y=Math.sin(s*.8)*.12;vis.g.position.y=pos.y-1.55;}
+  else if(anim==='stun'){vis.LA.rotation.z=Math.PI*0.55+Math.sin(s*8)*0.25;vis.RA.rotation.z=-Math.PI*0.55-Math.sin(s*8)*0.25;vis.LA.rotation.x=Math.sin(s*7)*0.3;vis.RA.rotation.x=-Math.sin(s*7)*0.3;vis.LL.rotation.x=0.45+Math.sin(s*9)*0.2;vis.RL.rotation.x=-0.3+Math.sin(s*9+1)*0.2;vis.HG.rotation.z=Math.sin(s*6)*0.35;vis.HG.rotation.y=Math.sin(s*5)*0.2;vis.g.rotation.z=Math.sin(s*7)*0.18;vis.g.position.y=pos.y+Math.sin(s*6)*0.06;}
+  else{vis.g.position.y=pos.y;}
   vis.g.position.x=pos.x;vis.g.position.z=pos.z;
   vis.g.rotation.y=anim==='dance'?facing+Math.sin(s*2.2)*.35:facing;
-  // Only apply lean for run; everything else stays upright
-  if(anim!=='run') vis.g.rotation.x=0;
+  if(anim!=='run')vis.g.rotation.x=0;
 }
 
 // ═════════════════════════════════════════
@@ -1033,23 +899,14 @@ const notifTimerEl=document.getElementById('notif-timer');
 function showNotif(fromIP,fromName,reqId){
   pendingFromIP=fromIP;pendingReqId=reqId;notifSec=15;
   document.getElementById('notif-name').textContent=fromName;
-  const av=document.getElementById('notif-avatar');
-  av.textContent=fromName[0].toUpperCase();
-  av.style.backgroundColor=hexCss(ipToProfile(fromIP).shirt);
+  const av=document.getElementById('notif-avatar');av.textContent=fromName[0].toUpperCase();av.style.backgroundColor=hexCss(ipToProfile(fromIP).shirt);
   notifBar.style.width='100%';notifTimerEl.textContent='15s';
-  notifEl.classList.remove('opacity-0','-translate-y-10','pointer-events-none');
-  notifEl.classList.add('opacity-100','translate-y-0','pointer-events-auto');
+  notifEl.classList.remove('opacity-0','-translate-y-10','pointer-events-none');notifEl.classList.add('opacity-100','translate-y-0','pointer-events-auto');
   if(notifInt)clearInterval(notifInt);
-  notifInt=setInterval(()=>{
-    notifSec--;notifBar.style.width=(notifSec/15*100)+'%';notifTimerEl.textContent=notifSec+'s';
-    if(notifSec<=0){clearInterval(notifInt);declineReq();}
-  },1000);
+  notifInt=setInterval(()=>{notifSec--;notifBar.style.width=(notifSec/15*100)+'%';notifTimerEl.textContent=notifSec+'s';if(notifSec<=0){clearInterval(notifInt);declineReq();}},1000);
 }
-function hideNotif(){
-  notifEl.classList.add('opacity-0','-translate-y-10','pointer-events-none');
-  notifEl.classList.remove('opacity-100','translate-y-0','pointer-events-auto');
-  pendingReqId=null;pendingFromIP=null;
-}
+function hideNotif(){notifEl.classList.add('opacity-0','-translate-y-10','pointer-events-none');notifEl.classList.remove('opacity-100','translate-y-0','pointer-events-auto');pendingReqId=null;pendingFromIP=null;}
+
 async function acceptReq(){
   if(!pendingReqId)return;
   if(db)await db.from('conv_requests').update({status:'accepted'}).eq('id',pendingReqId);
@@ -1058,12 +915,12 @@ async function acceptReq(){
   document.getElementById('chat-badge').textContent='● Active';
   document.getElementById('chat-badge').className='text-xs bg-emerald-800 text-emerald-300 px-1.5 py-0.5 rounded-full font-bold';
   addSysMsg(`Conversation started with ${rname} 🎉`);
+  // Start WebRTC — acceptor is the polite peer
+  await startRTC(true);
+  showAVOverlay(rname);
   clearInterval(notifInt);hideNotif();
 }
-async function declineReq(){
-  if(db&&pendingReqId)await db.from('conv_requests').update({status:'declined'}).eq('id',pendingReqId);
-  hideNotif();
-}
+async function declineReq(){if(db&&pendingReqId)await db.from('conv_requests').update({status:'declined'}).eq('id',pendingReqId);hideNotif();}
 document.getElementById('notif-accept').addEventListener('click',acceptReq);
 document.getElementById('notif-decline').addEventListener('click',()=>{clearInterval(notifInt);declineReq();});
 
@@ -1071,20 +928,20 @@ async function requestConvWith(ip){
   if(!db||!myIP){addSysMsg('Multiplayer not configured.');return;}
   if(activeConvIP){addSysMsg('Already in a conversation. End it first.');return;}
   if(pendingToIP){addSysMsg('Already waiting for a response.');return;}
-  const {data,error}=await db.from('conv_requests').insert({from_ip:myIP,to_ip:ip,status:'pending'}).select().single();
+  const{data,error}=await db.from('conv_requests').insert({from_ip:myIP,to_ip:ip,status:'pending'}).select().single();
   if(error){addSysMsg('Failed to send request.');return;}
   if(data){
     pendingToIP=ip;
-    const targetName=remotes.get(ip)?.name||ip;
-    addSysMsg(`⏳ Waiting for ${targetName} to accept…`);
-    // Update chat badge to show waiting state
+    addSysMsg(`⏳ Waiting for ${remotes.get(ip)?.name||ip} to accept conversation…`);
     document.getElementById('chat-badge').textContent='⏳ Waiting…';
     document.getElementById('chat-badge').className='text-xs bg-yellow-900 text-yellow-300 px-1.5 py-0.5 rounded-full font-bold';
-    refreshNearby(); // re-render nearby list to show waiting state
+    refreshNearby();
   }
 }
+
 async function endConv(){
-  activeConvIP=null; pendingToIP=null;
+  stopRTC(true);
+  activeConvIP=null;pendingToIP=null;
   document.getElementById('chat-badge').textContent='No conv.';
   document.getElementById('chat-badge').className='text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded-full';
   addSysMsg('Conversation ended.');
@@ -1096,57 +953,34 @@ async function endConv(){
 // ═════════════════════════════════════════
 const chatInput=document.getElementById('chat-input');
 chatInput.addEventListener('focus',()=>inputFocused=true);
-chatInput.addEventListener('blur', ()=>inputFocused=false);
+chatInput.addEventListener('blur',()=>inputFocused=false);
 chatInput.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')submitChat();});
 document.getElementById('chat-btn').addEventListener('click',submitChat);
 
-function addSysMsg(text){
-  const log=document.getElementById('chat-log'),ph=document.getElementById('chat-ph');if(ph)ph.remove();
-  const d=document.createElement('div');d.className='text-xs text-center text-gray-500 py-0.5 italic';
-  d.textContent=`— ${text} —`;log.appendChild(d);log.scrollTop=log.scrollHeight;
-}
-function addChatMsg(ip,name,text){
-  const log=document.getElementById('chat-log'),ph=document.getElementById('chat-ph');if(ph)ph.remove();
-  const isMe=ip===myIP,t=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-  const d=document.createElement('div');
-  d.className=`text-xs border-l-2 pl-2 py-0.5 ${isMe?'border-blue-600':'border-green-600'}`;
-  d.innerHTML=`<span class="${isMe?'text-blue-400':'text-green-400'} font-bold">${name}</span> <span class="text-gray-600">${t}</span><br><span class="text-gray-200">${text}</span>`;
-  log.appendChild(d);log.scrollTop=log.scrollHeight;
-}
+function addSysMsg(text){const log=document.getElementById('chat-log'),ph=document.getElementById('chat-ph');if(ph)ph.remove();const d=document.createElement('div');d.className='text-xs text-center text-gray-500 py-0.5 italic';d.textContent=`— ${text} —`;log.appendChild(d);log.scrollTop=log.scrollHeight;}
+function addChatMsg(ip,name,text){const log=document.getElementById('chat-log'),ph=document.getElementById('chat-ph');if(ph)ph.remove();const isMe=ip===myIP,ts=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});const d=document.createElement('div');d.className=`text-xs border-l-2 pl-2 py-0.5 ${isMe?'border-blue-600':'border-green-600'}`;d.innerHTML=`<span class="${isMe?'text-blue-400':'text-green-400'} font-bold">${name}</span> <span class="text-gray-600">${ts}</span><br><span class="text-gray-200">${text}</span>`;log.appendChild(d);log.scrollTop=log.scrollHeight;}
 
 async function submitChat(){
   const text=chatInput.value.trim();if(!text||!myVisual)return;
-  drawBubble(myVisual,text);myVisual.bMesh.visible=true;
-  if(myVisual.bubTimer)clearTimeout(myVisual.bubTimer);
+  drawBubble(myVisual,text);myVisual.bMesh.visible=true;if(myVisual.bubTimer)clearTimeout(myVisual.bubTimer);
   myVisual.bubTimer=setTimeout(()=>myVisual.bMesh.visible=false,Math.max(3500,text.length*95));
-  if(activeConvIP){
-    addChatMsg(myIP,myProfile.name,text);
-    if(db)await db.from('messages').insert({from_ip:myIP,to_ip:activeConvIP,text});
-  }
+  if(activeConvIP){addChatMsg(myIP,myProfile.name,text);if(db)await db.from('messages').insert({from_ip:myIP,to_ip:activeConvIP,text});}
   chatInput.value='';chatInput.blur();
 }
 
-// ═════════════════════════════════════════
-//  NEARBY LIST
-// ═════════════════════════════════════════
 function refreshNearby(){
-  const list=document.getElementById('nearby-list');
-  const arr=[];
-  remotes.forEach((rp,ip)=>{
-    const dx=ST.pos.x-rp.buf.x,dz=ST.pos.z-rp.buf.z;
-    arr.push({ip,name:rp.name,dist:Math.sqrt(dx*dx+dz*dz)});
-  });
+  const list=document.getElementById('nearby-list');const arr=[];
+  remotes.forEach((rp,ip)=>{const dx=ST.pos.x-rp.buf.x,dz=ST.pos.z-rp.buf.z;arr.push({ip,name:rp.name,dist:Math.sqrt(dx*dx+dz*dz)});});
   arr.sort((a,b)=>a.dist-b.dist);
   if(!arr.length){list.innerHTML='<p class="text-gray-600 text-xs text-center py-1">No players nearby</p>';return;}
   list.innerHTML='';
   arr.slice(0,4).forEach(({ip,name,dist})=>{
-    const inConv=activeConvIP===ip;
+    const inConv=activeConvIP===ip,inRange=dist<CONV_RANGE;
     const d=document.createElement('div');d.className='flex items-center justify-between mb-1.5';
-    const inRange=dist<CONV_RANGE;
     let btn='';
     if(inConv)btn=`<button onclick="endConv()" class="text-xs bg-red-900 hover:bg-red-800 text-red-200 px-1.5 py-0.5 rounded-lg transition-all">End</button>`;
     else if(pendingToIP===ip)btn=`<span class="text-yellow-400 text-xs font-bold">⏳ Waiting…</span>`;
-    else if(inRange&&!pendingToIP)btn=`<button onclick="requestConvWith('${ip}')" class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-1.5 py-0.5 rounded-lg transition-all">Chat</button>`;
+    else if(inRange&&!pendingToIP)btn=`<button onclick="requestConvWith('${ip}')" class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-1.5 py-0.5 rounded-lg transition-all">💬 Convo</button>`;
     else btn=`<span class="text-gray-600 text-xs">${dist.toFixed(1)}m</span>`;
     d.innerHTML=`<span class="text-gray-300 text-xs truncate max-w-24">${name}</span>${btn}`;
     list.appendChild(d);
@@ -1158,162 +992,112 @@ function refreshNearby(){
 //  SUPABASE INIT
 // ═════════════════════════════════════════
 async function initSupabase(){
-  // ── Get visitor IP (3 fallbacks) ──────────────
-  const ipApis = [
-    'https://api.ipify.org?format=json',
-    'https://api64.ipify.org?format=json',
-    'https://ipapi.co/json/'
-  ];
+  const ipApis=['https://api.ipify.org?format=json','https://api64.ipify.org?format=json','https://ipapi.co/json/'];
   for(const url of ipApis){
     try{
-      const ctrl = new AbortController();
-      const tid  = setTimeout(()=>ctrl.abort(), 4000);
-      const r = await fetch(url, {signal: ctrl.signal});
-      clearTimeout(tid);
-      const d = await r.json();
-      myIP = d.ip || d.IPv4 || d.query;
-      if(myIP){ console.log('[init] IP resolved:', myIP); break; }
-    }catch(e){ console.warn('[init] IP api failed:', url, e.message); }
+      const ctrl=new AbortController(),tid=setTimeout(()=>ctrl.abort(),4000);
+      const r=await fetch(url,{signal:ctrl.signal});clearTimeout(tid);
+      const d=await r.json();myIP=d.ip||d.IPv4||d.query;
+      if(myIP){console.log('[init] IP:',myIP);break;}
+    }catch(e){console.warn('[init] IP api failed:',url,e.message);}
   }
-  if(!myIP){ myIP = 'demo_' + Math.random().toString(36).slice(2,10); console.warn('[init] Using fallback ID:', myIP); }
+  if(!myIP){myIP='demo_'+Math.random().toString(36).slice(2,10);console.warn('[init] fallback ID:',myIP);}
 
-  // ── Build character ────────────────────────────
   try{
-    myProfile = ipToProfile(myIP);
-    myVisual  = buildChar(myProfile);
-    drawNameTag(myVisual, myProfile.name, true);
-    const av = document.getElementById('pc-avatar');
-    av.textContent = myProfile.name[0];
-    av.style.backgroundColor = hexCss(myProfile.shirt);
-    document.getElementById('pc-name').textContent    = myProfile.name;
-    document.getElementById('cust-name').textContent  = myProfile.name;
-    console.log('[init] character built:', myProfile.name);
-  }catch(e){ console.error('[init] buildChar error:', e); return; }
+    myProfile=ipToProfile(myIP);myVisual=buildChar(myProfile);drawNameTag(myVisual,myProfile.name,true);
+    const av=document.getElementById('pc-avatar');av.textContent=myProfile.name[0];av.style.backgroundColor=hexCss(myProfile.shirt);
+    document.getElementById('pc-name').textContent=myProfile.name;
+    document.getElementById('cust-name').textContent=myProfile.name;
+    console.log('[init] character built:',myProfile.name);
+  }catch(e){console.error('[init] buildChar error:',e);return;}
 
-  if(!db){ console.warn('[init] No Supabase client — offline mode'); return; }
+  if(!db){console.warn('[init] offline mode');return;}
 
-  // ── Upsert own row (critical — check for error) ─
-  const {error: uErr} = await db.from('players').upsert({
-    ip: myIP, name: myProfile.name,
-    pos_x:0, pos_y:0, pos_z:0, facing:0, anim:'idle',
-    shirt: myProfile.shirt, hat: myProfile.hat,
-    pants: myProfile.pants, skin: myProfile.skin,
-    last_seen: new Date().toISOString()
-  }, {onConflict:'ip'});
-
-  if(uErr){
-    console.error('[init] Upsert FAILED. Most likely cause: RLS is ON with no policies.',
-      '\nRun in Supabase SQL Editor:\n  alter table players disable row level security;',
-      '\nError:', uErr.message, uErr);
-    return;
-  }
+  const{error:uErr}=await db.from('players').upsert({
+    ip:myIP,name:myProfile.name,pos_x:0,pos_y:0,pos_z:0,facing:0,anim:'idle',
+    shirt:myProfile.shirt,hat:myProfile.hat,pants:myProfile.pants,skin:myProfile.skin,
+    last_seen:new Date().toISOString()
+  },{onConflict:'ip'});
+  if(uErr){console.error('[init] Upsert FAILED — check RLS:',uErr.message);return;}
   console.log('[init] player upserted ✓');
 
-  // ── Load existing online players ───────────────
-  const {data: ex, error: sErr} = await db.from('players').select('*')
-    .neq('ip', myIP)
-    .gt('last_seen', new Date(Date.now()-90000).toISOString());
-  if(sErr) console.warn('[init] select error:', sErr.message);
+  const{data:ex}=await db.from('players').select('*').neq('ip',myIP).gt('last_seen',new Date(Date.now()-90000).toISOString());
   (ex||[]).forEach(createOrUpdateRemote);
-  console.log('[init] loaded', ex?.length||0, 'existing players');
 
-  // ── Realtime: player positions ─────────────────
-  db.channel('players-ch')
-    .on('postgres_changes',{event:'*',schema:'public',table:'players'}, pl=>{
-      if(pl.eventType==='DELETE'){ removeRemote(pl.old.ip); return; }
-      if(pl.new && pl.new.ip !== myIP) createOrUpdateRemote(pl.new);
-    })
-    .subscribe(s => console.log('[rt] players channel:', s));
+  db.channel('players-ch').on('postgres_changes',{event:'*',schema:'public',table:'players'},pl=>{
+    if(pl.eventType==='DELETE'){removeRemote(pl.old.ip);return;}
+    if(pl.new&&pl.new.ip!==myIP)createOrUpdateRemote(pl.new);
+  }).subscribe(s=>console.log('[rt] players:',s));
 
-  // ── Realtime: conversation requests ───────────
   db.channel('convreq-ch')
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'conv_requests'}, pl=>{
-      if(pl.new.to_ip !== myIP) return;
-      const rp = remotes.get(pl.new.from_ip);
-      showNotif(pl.new.from_ip, rp?.name||pl.new.from_ip, pl.new.id);
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'conv_requests'},pl=>{
+      if(pl.new.to_ip!==myIP)return;
+      const rp=remotes.get(pl.new.from_ip);
+      showNotif(pl.new.from_ip,rp?.name||pl.new.from_ip,pl.new.id);
     })
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'conv_requests'}, pl=>{
-      if(pl.new.from_ip !== myIP) return;
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'conv_requests'},async pl=>{
+      if(pl.new.from_ip!==myIP)return;
       if(pl.new.status==='accepted'){
-        activeConvIP = pl.new.to_ip; pendingToIP = null;
-        document.getElementById('chat-badge').textContent = '● Active';
-        document.getElementById('chat-badge').className = 'text-xs bg-emerald-800 text-emerald-300 px-1.5 py-0.5 rounded-full font-bold';
-        addSysMsg(`${remotes.get(pl.new.to_ip)?.name||pl.new.to_ip} accepted! 🎉`);
+        activeConvIP=pl.new.to_ip;pendingToIP=null;
+        document.getElementById('chat-badge').textContent='● Active';
+        document.getElementById('chat-badge').className='text-xs bg-emerald-800 text-emerald-300 px-1.5 py-0.5 rounded-full font-bold';
+        const rname=remotes.get(pl.new.to_ip)?.name||pl.new.to_ip;
+        addSysMsg(`${rname} accepted! 🎉`);
+        // Requester = impolite peer — initiates WebRTC offer
+        await startRTC(false);
+        showAVOverlay(rname);
         refreshNearby();
-      } else if(pl.new.status==='declined'){
-        pendingToIP = null;
-        document.getElementById('chat-badge').textContent = 'No conv.';
-        document.getElementById('chat-badge').className = 'text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded-full';
-        addSysMsg('❌ Request declined.');
-        refreshNearby();
+      }else if(pl.new.status==='declined'){
+        pendingToIP=null;
+        document.getElementById('chat-badge').textContent='No conv.';
+        document.getElementById('chat-badge').className='text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded-full';
+        addSysMsg('❌ Request declined.');refreshNearby();
       }
     })
-    .subscribe(s => console.log('[rt] conv_requests channel:', s));
+    .subscribe(s=>console.log('[rt] convreq:',s));
 
-  // ── Realtime: chat messages ────────────────────
-  db.channel('msg-ch')
-    .on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'}, pl=>{
-      if(pl.new.to_ip !== myIP) return;
-      const rp = remotes.get(pl.new.from_ip);
-      addChatMsg(pl.new.from_ip, rp?.name||pl.new.from_ip, pl.new.text);
-      if(rp){
-        drawBubble(rp.vis, pl.new.text); rp.vis.bMesh.visible=true;
-        if(rp.vis.bubTimer) clearTimeout(rp.vis.bubTimer);
-        rp.vis.bubTimer=setTimeout(()=>rp.vis.bMesh.visible=false, Math.max(3500,pl.new.text.length*95));
-      }
-    })
-    .subscribe(s => console.log('[rt] messages channel:', s));
+  db.channel('msg-ch').on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},pl=>{
+    if(pl.new.to_ip!==myIP)return;
+    const rp=remotes.get(pl.new.from_ip);
+    addChatMsg(pl.new.from_ip,rp?.name||pl.new.from_ip,pl.new.text);
+    if(rp){drawBubble(rp.vis,pl.new.text);rp.vis.bMesh.visible=true;if(rp.vis.bubTimer)clearTimeout(rp.vis.bubTimer);rp.vis.bubTimer=setTimeout(()=>rp.vis.bMesh.visible=false,Math.max(3500,pl.new.text.length*95));}
+  }).subscribe(s=>console.log('[rt] messages:',s));
 
-  // ── Position sync: movement-triggered, debounced, no concurrent requests ──
-  // No setInterval — avoids memory leak from stacked pending Promises.
-  // Instead, the render loop calls _triggerSync() only when position changes.
-  let _syncLocked = false;
-  let _syncQueued = false;
+  // WebRTC signaling channel
+  db.channel('rtc-sig-ch').on('postgres_changes',{event:'INSERT',schema:'public',table:'webrtc_signals'},pl=>{
+    if(pl.new.to_ip!==myIP)return;
+    handleRTCSignal(pl.new).catch(e=>console.error('[rtc] signal error:',e));
+  }).subscribe(s=>console.log('[rt] rtc-signals:',s));
 
-  async function _doSync() {
-    if(!myIP || !myVisual) return;
-    if(_syncLocked){ _syncQueued = true; return; }
-    _syncLocked = true;
-    try {
-      await db.from('players').update({
-        pos_x:   +ST.pos.x.toFixed(2),
-        pos_y:   +ST.pos.y.toFixed(2),
-        pos_z:   +ST.pos.z.toFixed(2),
-        facing:  +ST.facing.toFixed(2),
-        anim:    getMyAnim(),
-        last_seen: new Date().toISOString()
-      }).eq('ip', myIP);
-    } catch(e){ /* ignore transient network errors */ }
-    _syncLocked = false;
-    if(_syncQueued){ _syncQueued = false; _doSync(); }
+  // Debounced position sync
+  let _syncLocked=false,_syncQueued=false;
+  async function _doSync(){
+    if(!myIP||!myVisual)return;
+    if(_syncLocked){_syncQueued=true;return;}
+    _syncLocked=true;
+    try{await db.from('players').update({pos_x:+ST.pos.x.toFixed(2),pos_y:+ST.pos.y.toFixed(2),pos_z:+ST.pos.z.toFixed(2),facing:+ST.facing.toFixed(2),anim:getMyAnim(),last_seen:new Date().toISOString()}).eq('ip',myIP);}catch(e){}
+    _syncLocked=false;
+    if(_syncQueued){_syncQueued=false;_doSync();}
   }
-
-  let _syncTimer   = null;
-  let _lastSyncX   = 0, _lastSyncZ = 0;
-  let _lastSyncAnim = 'idle';
-
-  window._triggerSync = function(x, z, anim){
-    const moved = Math.abs(x - _lastSyncX) + Math.abs(z - _lastSyncZ);
-    if(moved < 0.25 && anim === _lastSyncAnim) return; // nothing meaningful changed
-    _lastSyncX = x; _lastSyncZ = z; _lastSyncAnim = anim;
-    clearTimeout(_syncTimer);
-    _syncTimer = setTimeout(_doSync, 100); // 100ms debounce
+  let _syncTimer=null,_lastSyncX=0,_lastSyncZ=0,_lastSyncAnim='idle';
+  window._triggerSync=function(x,z,anim){
+    const moved=Math.abs(x-_lastSyncX)+Math.abs(z-_lastSyncZ);
+    if(moved<0.25&&anim===_lastSyncAnim)return;
+    _lastSyncX=x;_lastSyncZ=z;_lastSyncAnim=anim;
+    clearTimeout(_syncTimer);_syncTimer=setTimeout(_doSync,100);
   };
 
-  // ── Stale player cleanup every 10s ─────────────
-  setInterval(()=>{
-    const now=Date.now(), stale=[];
-    remotes.forEach((rp,ip)=>{ if(now-rp.lastSeen>60000) stale.push(ip); });
-    stale.forEach(removeRemote);
-  }, 10000);
+  // Stale player cleanup
+  setInterval(()=>{const now=Date.now(),stale=[];remotes.forEach((rp,ip)=>{if(now-rp.lastSeen>60000)stale.push(ip);});stale.forEach(removeRemote);},10000);
 
-  // ── Mark offline on tab close ──────────────────
-  addEventListener('beforeunload', ()=>{
-    navigator.sendBeacon(`${SUPABASE_URL}/rest/v1/players?ip=eq.${encodeURIComponent(myIP)}`,
-      new Blob([JSON.stringify({last_seen:'2000-01-01T00:00:00Z'})],{type:'application/json'}));
+  // Clean old webrtc signals every 2 min
+  setInterval(async()=>{if(!myIP||!db)return;await db.from('webrtc_signals').delete().eq('to_ip',myIP).lt('created_at',new Date(Date.now()-120000).toISOString()).catch(()=>{});},120000);
+
+  addEventListener('beforeunload',()=>{
+    try{stopRTC(false);}catch{}
+    navigator.sendBeacon(`${SUPABASE_URL}/rest/v1/players?ip=eq.${encodeURIComponent(myIP)}`,new Blob([JSON.stringify({last_seen:'2000-01-01T00:00:00Z'})],{type:'application/json'}));
   });
-
-  console.log('[init] Supabase fully initialized ✓');
+  console.log('[init] Supabase initialized ✓');
 }
 
 // ═════════════════════════════════════════
@@ -1321,7 +1105,7 @@ async function initSupabase(){
 // ═════════════════════════════════════════
 const clock=new THREE.Clock();let lastNR=0;
 
-function updateCamera(){
+function updateCamera3D(){
   camTgt.x+=(ST.pos.x-camTgt.x)*.12;camTgt.y+=(ST.pos.y+2.6-camTgt.y)*.10;camTgt.z+=(ST.pos.z-camTgt.z)*.12;
   const cx=Math.sin(camTheta)*Math.cos(camPhi)*camRadius,cy=Math.sin(camPhi)*camRadius,cz=Math.cos(camTheta)*Math.cos(camPhi)*camRadius;
   camera.position.set(camTgt.x+cx,camTgt.y+cy,camTgt.z+cz);camera.lookAt(camTgt);
@@ -1329,18 +1113,13 @@ function updateCamera(){
 }
 
 function tick(){
-  requestAnimationFrame(tick);
-  const dt=clock.getDelta(),t=clock.getElapsedTime();
-
+  requestAnimationFrame(tick);const dt=clock.getDelta(),t=clock.getElapsedTime();
   if(myVisual){
-    updatePhysics(dt);
-    ST.specialTime+=dt;
+    updatePhysics(dt);ST.specialTime+=dt;
     const anim=getMyAnim();
     if(anim!==ST.prevAnim){const info=AINFO[anim]||AINFO.idle;document.getElementById('hud-anim').textContent=info.i+' '+info.l;ST.prevAnim=anim;}
     applyAnim(myVisual,ST.pos,ST.facing,anim,ST.specialTime,ST.isDoubleJump,t);
-    // Trigger debounced position sync (no-op if _triggerSync not yet defined = offline)
-    if(typeof _triggerSync === 'function') _triggerSync(ST.pos.x, ST.pos.z, anim);
-    // shadow + bubbles
+    if(typeof _triggerSync==='function')_triggerSync(ST.pos.x,ST.pos.z,anim);
     const surf=getSurface(ST.pos.x,ST.pos.z);
     myVisual.shadow.position.set(ST.pos.x,surf+.02,ST.pos.z);
     const jh=Math.max(0,ST.pos.y-surf),bs=Math.max(.25,1-jh*.14);
@@ -1348,227 +1127,110 @@ function tick(){
     if(myVisual.bMesh.visible){myVisual.bMesh.position.set(ST.pos.x,ST.pos.y+6.2,ST.pos.z);myVisual.bMesh.lookAt(camera.position);}
     myVisual.nMesh.position.set(ST.pos.x,ST.pos.y+6.5,ST.pos.z);myVisual.nMesh.lookAt(camera.position);
   }
-
-  // Remotes
   remotes.forEach(rp=>{
-    // Smooth XZ interpolation
-    const bx=rp.buf.x,bz=rp.buf.z;
-    rp.vis.g.position.x+=(bx-rp.vis.g.position.x)*.18;
-    rp.vis.g.position.z+=(bz-rp.vis.g.position.z)*.18;
-    // Facing interpolation
-    let df=rp.buf.facing-rp.facing;while(df>Math.PI)df-=2*Math.PI;while(df<-Math.PI)df+=2*Math.PI;
-    rp.facing+=df*Math.min(1,8*dt);
-    const ipos={x:rp.vis.g.position.x,y:rp.buf.y,z:rp.vis.g.position.z};
-    applyAnim(rp.vis,ipos,rp.facing,rp.buf.anim,t,false,t);
+    rp.vis.g.position.x+=(rp.buf.x-rp.vis.g.position.x)*.18;rp.vis.g.position.z+=(rp.buf.z-rp.vis.g.position.z)*.18;
+    let df=rp.buf.facing-rp.facing;while(df>Math.PI)df-=2*Math.PI;while(df<-Math.PI)df+=2*Math.PI;rp.facing+=df*Math.min(1,8*dt);
+    applyAnim(rp.vis,{x:rp.vis.g.position.x,y:rp.buf.y,z:rp.vis.g.position.z},rp.facing,rp.buf.anim,t,false,t);
     const ss=getSurface(rp.buf.x,rp.buf.z);
-    rp.vis.shadow.position.set(rp.vis.g.position.x,ss+.02,rp.vis.g.position.z);
-    rp.vis.shadow.scale.set(1,1,1);rp.vis.shadow.material.opacity=.18;
+    rp.vis.shadow.position.set(rp.vis.g.position.x,ss+.02,rp.vis.g.position.z);rp.vis.shadow.scale.set(1,1,1);rp.vis.shadow.material.opacity=.18;
     if(rp.vis.bMesh.visible){rp.vis.bMesh.position.set(rp.vis.g.position.x,rp.buf.y+6.2,rp.vis.g.position.z);rp.vis.bMesh.lookAt(camera.position);}
     rp.vis.nMesh.position.set(rp.vis.g.position.x,rp.buf.y+6.5,rp.vis.g.position.z);rp.vis.nMesh.lookAt(camera.position);
   });
-
-  updateCamera();
-  // Props: physics + label billboard (handled inside updateProps)
-  updateProps(dt);
-  // Near-prop hint (throttled)
-  if(myVisual && t-lastNR>.25){ checkNearHint(); }
+  updateCamera3D();updateProps(dt);
+  if(myVisual&&t-lastNR>.25)checkNearHint();
   if(t-lastNR>.5){lastNR=t;refreshNearby();}
   renderer.render(scene,camera);
 }
 
 // ═════════════════════════════════════════
-//  MOBILE CONTROLS SYSTEM
+//  MOBILE CONTROLS
 // ═════════════════════════════════════════
-let joystickX = 0, joystickY = 0, joystickRunMode = false;
-const JOY_R   = 60; // joystick clamping radius in px (outer div = 144px → 72px, leave some margin)
+const JOY_R=60;
 
 function initMobileControls(){
-  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-  if(!isTouch) return;
+  const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+  if(!isTouch)return;
 
-  // Settings FAB → customize panel toggle
-  const settingsFab = document.getElementById('mob-settings-fab');
-  settingsFab.addEventListener('touchstart', e=>{
-    e.preventDefault(); e.stopPropagation();
-    document.getElementById('panel-cust').classList.toggle('hidden');
-  }, {passive:false});
+  document.getElementById('mob-settings-fab').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();document.getElementById('panel-cust').classList.toggle('hidden');},{passive:false});
 
-  // ── Chat FAB toggle ────────────────────────────
-  const chatFab   = document.getElementById('mob-chat-fab');
-  const chatPanel = document.getElementById('mobile-chat-panel');
-  let chatOpen = false;
+  const chatFab=document.getElementById('mob-chat-fab'),chatPanel=document.getElementById('mobile-chat-panel');
+  let chatOpen=false;
+  chatFab.addEventListener('touchstart',e=>{
+    e.preventDefault();e.stopPropagation();chatOpen=!chatOpen;
+    if(chatOpen){chatPanel.classList.remove('hidden');chatFab.classList.remove('bg-blue-600/90','border-blue-400');chatFab.classList.add('bg-emerald-600/90','border-emerald-400');}
+    else{chatPanel.classList.add('hidden');chatFab.classList.remove('bg-emerald-600/90','border-emerald-400');chatFab.classList.add('bg-blue-600/90','border-blue-400');document.getElementById('mob-chat-input').blur();}
+  },{passive:false});
+  document.addEventListener('touchstart',e=>{
+    if(chatOpen&&!chatPanel.contains(e.target)&&e.target!==chatFab){chatOpen=false;chatPanel.classList.add('hidden');chatFab.classList.remove('bg-emerald-600/90','border-emerald-400');chatFab.classList.add('bg-blue-600/90','border-blue-400');}
+  },{passive:true});
 
-  chatFab.addEventListener('touchstart', e=>{
-    e.preventDefault(); e.stopPropagation();
-    chatOpen = !chatOpen;
-    if(chatOpen){
-      chatPanel.classList.remove('hidden');
-      chatFab.classList.remove('bg-blue-600/90','border-blue-400');
-      chatFab.classList.add('bg-emerald-600/90','border-emerald-400');
-    } else {
-      chatPanel.classList.add('hidden');
-      chatFab.classList.remove('bg-emerald-600/90','border-emerald-400');
-      chatFab.classList.add('bg-blue-600/90','border-blue-400');
-      document.getElementById('mob-chat-input').blur();
-    }
-  }, {passive:false});
-
-  // Close chat panel when tapping outside
-  document.addEventListener('touchstart', e=>{
-    if(chatOpen && !chatPanel.contains(e.target) && e.target!==chatFab){
-      chatOpen=false;
-      chatPanel.classList.add('hidden');
-      chatFab.classList.remove('bg-emerald-600/90','border-emerald-400');
-      chatFab.classList.add('bg-blue-600/90','border-blue-400');
-    }
-  }, {passive:true});
-
-  // ── Mobile chat submit ─────────────────────────
-  const mobInput = document.getElementById('mob-chat-input');
-  const mobBtn   = document.getElementById('mob-chat-btn');
-  mobInput.addEventListener('focus', ()=>inputFocused=true);
-  mobInput.addEventListener('blur',  ()=>inputFocused=false);
-  mobInput.addEventListener('keydown', e=>{ e.stopPropagation(); if(e.key==='Enter') mobSubmitChat(); });
-  mobBtn.addEventListener('touchstart', e=>{ e.preventDefault(); mobSubmitChat(); }, {passive:false});
+  const mobInput=document.getElementById('mob-chat-input'),mobBtn=document.getElementById('mob-chat-btn');
+  mobInput.addEventListener('focus',()=>inputFocused=true);mobInput.addEventListener('blur',()=>inputFocused=false);
+  mobInput.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')mobSubmitChat();});
+  mobBtn.addEventListener('touchstart',e=>{e.preventDefault();mobSubmitChat();},{passive:false});
 
   function mobSubmitChat(){
-    const text = mobInput.value.trim(); if(!text||!myVisual) return;
-    drawBubble(myVisual, text);
-    myVisual.bMesh.visible=true;
-    if(myVisual.bubTimer) clearTimeout(myVisual.bubTimer);
-    myVisual.bubTimer=setTimeout(()=>myVisual.bMesh.visible=false, Math.max(3500,text.length*95));
-    if(activeConvIP){
-      mobAddChatMsg(myIP, myProfile?.name||'Me', text);
-      if(db) db.from('messages').insert({from_ip:myIP,to_ip:activeConvIP,text});
-    }
-    mobInput.value=''; mobInput.blur();
+    const text=mobInput.value.trim();if(!text||!myVisual)return;
+    drawBubble(myVisual,text);myVisual.bMesh.visible=true;if(myVisual.bubTimer)clearTimeout(myVisual.bubTimer);
+    myVisual.bubTimer=setTimeout(()=>myVisual.bMesh.visible=false,Math.max(3500,text.length*95));
+    if(activeConvIP){mobAddMsg(myIP,myProfile?.name||'Me',text);if(db)db.from('messages').insert({from_ip:myIP,to_ip:activeConvIP,text});}
+    mobInput.value='';mobInput.blur();
+  }
+  function mobAddMsg(ip,name,text){
+    const log=document.getElementById('mob-chat-log'),ph=document.getElementById('mob-chat-ph');if(ph)ph.remove();
+    const isMe=ip===myIP,d=document.createElement('div');
+    d.className=`text-sm border-l-2 pl-3 py-1 ${isMe?'border-blue-600':'border-green-600'}`;
+    const tm=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    d.innerHTML=`<span class="${isMe?'text-blue-400':'text-green-400'} font-bold">${name}</span> <span class="text-gray-600 text-xs">${tm}</span><br><span class="text-gray-200">${text}</span>`;
+    log.appendChild(d);log.scrollTop=log.scrollHeight;
   }
 
-  // Helper: add message to mobile chat log
-  function mobAddChatMsg(ip, name, text){
-    const log=document.getElementById('mob-chat-log');
-    const ph=document.getElementById('mob-chat-ph'); if(ph) ph.remove();
-    const isMe=ip===myIP;
-    const d=document.createElement('div');
-    d.className=`text-xs border-l-2 pl-2 py-0.5 ${isMe?'border-blue-600':'border-green-600'}`;
-    const time=new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
-    d.innerHTML=`<span class="${isMe?'text-blue-400':'text-green-400'} font-bold">${name}</span> <span class="text-gray-600">${time}</span><br><span class="text-gray-200">${text}</span>`;
-    log.appendChild(d); log.scrollTop=log.scrollHeight;
-  }
+  const dbadge=document.getElementById('chat-badge'),mbadge=document.getElementById('mob-chat-badge');
+  new MutationObserver(()=>{mbadge.textContent=dbadge.textContent;mbadge.className=dbadge.className;}).observe(dbadge,{childList:true,attributes:true,attributeFilter:['class']});
+  new MutationObserver(ms=>{ms.forEach(m=>m.addedNodes.forEach(node=>{if(node.nodeType===1&&node.tagName==='DIV'){const cl=node.cloneNode(true),ml=document.getElementById('mob-chat-log'),ph=document.getElementById('mob-chat-ph');if(ph)ph.remove();ml.appendChild(cl);ml.scrollTop=ml.scrollHeight;}}));}).observe(document.getElementById('chat-log'),{childList:true});
 
-  // Sync mobile chat badge with desktop badge changes
-  const desktopBadge = document.getElementById('chat-badge');
-  const mobBadge     = document.getElementById('mob-chat-badge');
-  new MutationObserver(()=>{
-    mobBadge.textContent  = desktopBadge.textContent;
-    mobBadge.className    = desktopBadge.className;
-  }).observe(desktopBadge, {childList:true, attributes:true, attributeFilter:['class']});
+  // AV buttons — immediate touchstart (no 300ms delay)
+  document.getElementById('btn-cam').addEventListener('touchstart',e=>{e.preventDefault();toggleCamera();},{passive:false});
+  document.getElementById('btn-mic').addEventListener('touchstart',e=>{e.preventDefault();toggleMic();},{passive:false});
 
-  // Mirror incoming messages (from addChatMsg) to mobile log too
-  const desktopLog = document.getElementById('chat-log');
-  new MutationObserver(mutations=>{
-    mutations.forEach(m=>{
-      m.addedNodes.forEach(node=>{
-        if(node.nodeType===1 && node.tagName==='DIV'){
-          const clone = node.cloneNode(true);
-          const mobLog = document.getElementById('mob-chat-log');
-          const ph = document.getElementById('mob-chat-ph'); if(ph) ph.remove();
-          mobLog.appendChild(clone);
-          mobLog.scrollTop = mobLog.scrollHeight;
-        }
-      });
-    });
-  }).observe(desktopLog, {childList:true});
+  // Joystick
+  const outer=document.getElementById('joy-outer'),knob=document.getElementById('joy-knob');
+  const resetKnob=()=>{knob.style.left='50%';knob.style.top='50%';knob.style.transform='translate(-50%,-50%)';};
+  resetKnob();let joyTouchId=null;
+  outer.addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();joyTouchId=e.changedTouches[0].identifier;},{passive:false});
+  outer.addEventListener('touchmove',e=>{
+    e.preventDefault();e.stopPropagation();
+    let touch=null;for(const t of e.changedTouches)if(t.identifier===joyTouchId){touch=t;break;}
+    if(!touch)return;
+    const rect=outer.getBoundingClientRect();
+    let dx=touch.clientX-(rect.left+rect.width/2),dy=touch.clientY-(rect.top+rect.height/2);
+    const dist=Math.sqrt(dx*dx+dy*dy);if(dist>JOY_R){dx=dx/dist*JOY_R;dy=dy/dist*JOY_R;}
+    joystickX=dx/JOY_R;joystickY=dy/JOY_R;
+    knob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+  },{passive:false});
+  ['touchend','touchcancel'].forEach(ev=>outer.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();joystickX=joystickY=0;joyTouchId=null;resetKnob();},{passive:false}));
 
-  // ── Show joystick panel ──────────────────────────
-  // (mobile-wrap is now shown via lg:hidden CSS — no JS needed)
-  const outer = document.getElementById('joy-outer');
-  const knob  = document.getElementById('joy-knob');
+  const runBtn=document.getElementById('btn-run-mobile');
+  runBtn.addEventListener('touchstart',e=>{
+    e.preventDefault();e.stopPropagation();joystickRunMode=!joystickRunMode;
+    runBtn.className=joystickRunMode
+      ?'px-5 py-2 rounded-full text-sm font-black border-2 border-orange-400 bg-orange-500/80 text-white transition-all active:scale-95 select-none'
+      :'px-5 py-2 rounded-full text-sm font-black border-2 border-white/30 bg-white/15 text-white/70 transition-all active:scale-95 select-none';
+  },{passive:false});
 
-  // Center knob via JS so we don't fight Tailwind
-  const resetKnob = () => {
-    knob.style.left      = '50%';
-    knob.style.top       = '50%';
-    knob.style.transform = 'translate(-50%, -50%)';
-  };
-  resetKnob();
-
-  let joyTouchId = null;
-
-  outer.addEventListener('touchstart', e => {
-    e.preventDefault(); e.stopPropagation();
-    joyTouchId = e.changedTouches[0].identifier;
-  }, {passive:false});
-
-  outer.addEventListener('touchmove', e => {
-    e.preventDefault(); e.stopPropagation();
-    let touch = null;
-    for(const t of e.changedTouches){ if(t.identifier===joyTouchId){touch=t;break;} }
-    if(!touch) return;
-    const rect = outer.getBoundingClientRect();
-    let dx = touch.clientX - (rect.left + rect.width  / 2);
-    let dy = touch.clientY - (rect.top  + rect.height / 2);
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    if(dist > JOY_R){ dx = dx/dist*JOY_R; dy = dy/dist*JOY_R; }
-    joystickX =  dx / JOY_R;
-    joystickY =  dy / JOY_R; // updatePhysics negates this for forward
-    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-  }, {passive:false});
-
-  ['touchend','touchcancel'].forEach(ev => outer.addEventListener(ev, e => {
-    e.preventDefault(); e.stopPropagation();
-    joystickX = joystickY = 0;
-    joyTouchId = null;
-    resetKnob();
-  }, {passive:false}));
-
-  // Run toggle
-  const runBtn = document.getElementById('btn-run-mobile');
-  runBtn.addEventListener('touchstart', e => {
-    e.preventDefault(); e.stopPropagation();
-    joystickRunMode = !joystickRunMode;
-    if(joystickRunMode){
-      runBtn.className = 'px-5 py-2 rounded-full text-sm font-black border-2 border-orange-400 bg-orange-500/80 text-white transition-all active:scale-95 select-none';
-    } else {
-      runBtn.className = 'px-5 py-2 rounded-full text-sm font-black border-2 border-white/30 bg-white/15 text-white/70 transition-all active:scale-95 select-none';
-    }
-  }, {passive:false});
-
-  // Wave
-  document.getElementById('m-wave').addEventListener('touchstart', e => {
-    e.preventDefault(); e.stopPropagation();
-    ST.specialAnim = ST.specialAnim==='wave' ? null : 'wave';
-    ST.specialTime = 0;
-  }, {passive:false});
-
-  // Sit
-  document.getElementById('m-sit').addEventListener('touchstart', e => {
-    e.preventDefault(); e.stopPropagation();
-    ST.specialAnim = ST.specialAnim==='sit' ? null : 'sit';
-    ST.specialTime = 0;
-  }, {passive:false});
-
-  // Grab / Throw
-  document.getElementById('m-grab').addEventListener('touchstart', e => {
-    e.preventDefault(); e.stopPropagation();
-    grabProp();
-    // Update button label
-    const icon = document.getElementById('m-grab-icon');
-    const lbl  = document.getElementById('m-grab-lbl');
-    if(heldProp){ icon.textContent='🤜'; lbl.textContent='Throw'; }
-    else        { icon.textContent='🤚'; lbl.textContent='Grab'; }
-  }, {passive:false});
-
-  // Super Jump
-  document.getElementById('m-sjump').addEventListener('touchstart', e => {
-    e.preventDefault(); e.stopPropagation();
-    if(ST.specialAnim==='dance' || ST.specialAnim==='sit') return;
-    if(ST.grounded){
-      ST.velY=JUMPV; ST.grounded=false; ST.canDoubleJump=true; ST.isDoubleJump=false;
-    } else if(ST.canDoubleJump){
-      ST.velY=JUMPV2; ST.canDoubleJump=false; ST.isDoubleJump=true;
-    }
-  }, {passive:false});
+  document.getElementById('m-wave').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();ST.specialAnim=ST.specialAnim==='wave'?null:'wave';ST.specialTime=0;},{passive:false});
+  document.getElementById('m-sit').addEventListener('touchstart',e=>{e.preventDefault();e.stopPropagation();ST.specialAnim=ST.specialAnim==='sit'?null:'sit';ST.specialTime=0;},{passive:false});
+  document.getElementById('m-grab').addEventListener('touchstart',e=>{
+    e.preventDefault();e.stopPropagation();grabProp();
+    const gi=document.getElementById('m-grab-icon'),gl=document.getElementById('m-grab-lbl');
+    if(heldProp){gi.textContent='🤜';gl.textContent='Throw';}else{gi.textContent='🤚';gl.textContent='Grab';}
+  },{passive:false});
+  document.getElementById('m-sjump').addEventListener('touchstart',e=>{
+    e.preventDefault();e.stopPropagation();
+    if(ST.specialAnim==='dance'||ST.specialAnim==='sit')return;
+    if(ST.grounded){ST.velY=JUMPV;ST.grounded=false;ST.canDoubleJump=true;ST.isDoubleJump=false;}
+    else if(ST.canDoubleJump){ST.velY=JUMPV2;ST.canDoubleJump=false;ST.isDoubleJump=true;}
+  },{passive:false});
 }
 
 initSupabase();
