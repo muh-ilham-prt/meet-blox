@@ -549,16 +549,27 @@ async function startRTC(polite) {
   ignoreOffer = false;
   pc = new RTCPeerConnection(ICE_CONFIG);
 
-  // Remote track → show in remote video element
+  // ── FIX 1: ontrack — collect ALL incoming tracks into one MediaStream ──
+  // e.streams[0] is unreliable across browsers; build our own remote stream
+  const remoteStream = new MediaStream();
   const remVid = document.getElementById('remote-video');
   const remPlaceholder = document.getElementById('remote-placeholder');
   const remLiveDot = document.getElementById('remote-live-dot');
+
   pc.ontrack = e => {
-    if(remVid.srcObject !== e.streams[0]) remVid.srcObject = e.streams[0];
-    if(remPlaceholder) remPlaceholder.classList.add('hidden');
-    if(remLiveDot) remLiveDot.classList.remove('hidden');
-    document.getElementById('remote-video-wrap').classList.remove('hidden');
-    document.getElementById('av-status-bar').classList.add('hidden');
+    console.log('[rtc] got remote track:', e.track.kind, e.track.readyState);
+    // Add each track to our own stream — works for both audio and video
+    remoteStream.addTrack(e.track);
+    remVid.srcObject = remoteStream;
+    // Autoplay policy fix: call play() explicitly
+    remVid.play().catch(err => console.warn('[rtc] remote video play():', err));
+
+    if(e.track.kind === 'video') {
+      if(remPlaceholder) remPlaceholder.classList.add('hidden');
+      if(remLiveDot)     remLiveDot.classList.remove('hidden');
+      document.getElementById('remote-video-wrap').classList.remove('hidden');
+      document.getElementById('av-status-bar').classList.add('hidden');
+    }
   };
 
   // ICE candidate → signal peer
@@ -566,36 +577,44 @@ async function startRTC(polite) {
     if(e.candidate) sendRTCSignal('ice', e.candidate.toJSON());
   };
 
-  // Connection state
   pc.onconnectionstatechange = () => {
     console.log('[rtc] state:', pc.connectionState);
-    if(pc.connectionState === 'failed') {
-      pc.restartIce(); // automatic ICE restart for reconnection
-    }
+    if(pc.connectionState === 'failed') pc.restartIce();
   };
 
-  // Perfect negotiation: initiator fires offer; acceptor handles it
-  pc.onnegotiationneeded = async () => {
-    try {
-      makingOffer = true;
-      await pc.setLocalDescription(); // browser auto-creates offer
-      sendRTCSignal('offer', { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
-    } catch(e) { console.error('[rtc] onnegotiationneeded error:', e); }
-    finally { makingOffer = false; }
-  };
+  pc.onicegatheringstatechange = () => console.log('[rtc] ICE gathering:', pc.iceGatheringState);
+  pc.onsignalingstatechange   = () => console.log('[rtc] signaling:', pc.signalingState);
 
-  // Add transceivers so initiator can send first offer
-  // direction 'sendrecv' allows both sending and receiving
+  // ── FIX 2: Don't add blank transceivers before tracks exist ──
+  // Instead, add actual local tracks (or null-track senders) so the
+  // remote side knows what directions to expect.
+  // Add audio sender (may have no track yet — that's fine)
   pc.addTransceiver('audio', { direction: 'sendrecv' });
   pc.addTransceiver('video', { direction: 'sendrecv' });
 
-  // Attach existing local tracks if any
+  // ── FIX 3: Immediately attach any existing local tracks ──
+  // replaceTrack on the senders we just created
   if(localStream) {
+    const senders = pc.getSenders();
     localStream.getTracks().forEach(t => {
-      const sender = pc.getSenders().find(s => s.track?.kind === t.kind);
-      if(sender) sender.replaceTrack(t);
+      const s = senders.find(s => s.track === null && (pc.getTransceivers().find(tr => tr.sender === s)?.sender.track?.kind ?? t.kind) === t.kind
+        || (s.track?.kind === t.kind));
+      // Simpler: just find sender by kind via transceivers
+      const tr = pc.getTransceivers().find(tr => tr.sender.track?.kind === t.kind || (tr.sender.track === null && t.kind === tr.receiver.track?.kind));
+      if(tr) tr.sender.replaceTrack(t).catch(()=>{});
     });
   }
+
+  // Perfect negotiation: only the impolite peer (requester) triggers first offer
+  pc.onnegotiationneeded = async () => {
+    try {
+      makingOffer = true;
+      await pc.setLocalDescription();
+      sendRTCSignal('offer', { type: pc.localDescription.type, sdp: pc.localDescription.sdp });
+      console.log('[rtc] sent offer');
+    } catch(e) { console.error('[rtc] onnegotiationneeded error:', e); }
+    finally { makingOffer = false; }
+  };
 }
 
 // ── Handle incoming signal ─────────────────
@@ -676,32 +695,31 @@ async function toggleCamera() {
       const vidStream = await navigator.mediaDevices.getUserMedia({
         video: { width:{ideal:640}, height:{ideal:480}, frameRate:{ideal:30,max:30} }
       });
+      const track = vidStream.getVideoTracks()[0];
       if(!localStream) localStream = new MediaStream();
-      vidStream.getVideoTracks().forEach(t => {
-        // Remove old video track if any
-        localStream.getVideoTracks().forEach(old => { old.stop(); localStream.removeTrack(old); });
-        localStream.addTrack(t);
-      });
+      // Remove any existing video track
+      localStream.getVideoTracks().forEach(old => { old.stop(); localStream.removeTrack(old); });
+      localStream.addTrack(track);
       // Show local preview
       const locVid = document.getElementById('local-video');
       locVid.srcObject = localStream;
+      locVid.play().catch(()=>{});
       document.getElementById('local-video-wrap').classList.remove('hidden');
-      // Add track to peer connection
+      // FIX 4: replace via transceiver (more reliable than getSenders)
       if(pc) {
-        const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-        if(sender) await sender.replaceTrack(vidStream.getVideoTracks()[0]);
-        // onnegotiationneeded fires if sender didn't exist
+        const tr = pc.getTransceivers().find(t => t.receiver.track?.kind === 'video' || t.sender.track?.kind === 'video' || (t.sender.track === null && t.mid !== null));
+        if(tr) await tr.sender.replaceTrack(track);
+        else pc.addTrack(track, localStream); // fallback: add fresh
       }
     } catch(e) {
-      console.error('[cam] getUserMedia failed:', e);
-      camOn = false;
+      console.error('[cam] getUserMedia failed:', e); camOn = false;
     }
   } else {
-    localStream?.getVideoTracks().forEach(t => { t.stop(); localStream.removeTrack(t); });
+    localStream?.getVideoTracks().forEach(t => { t.stop(); localStream?.removeTrack(t); });
     document.getElementById('local-video-wrap').classList.add('hidden');
     if(pc) {
-      const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-      if(sender) await sender.replaceTrack(null);
+      const tr = pc.getTransceivers().find(t => t.sender.track?.kind === 'video');
+      if(tr) await tr.sender.replaceTrack(null).catch(()=>{});
     }
   }
   updateAVUI();
@@ -713,23 +731,23 @@ async function toggleMic() {
   if(micOn) {
     try {
       const audStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+        audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true, sampleRate:{ideal:48000} }
       });
+      const track = audStream.getAudioTracks()[0];
       if(!localStream) localStream = new MediaStream();
-      audStream.getAudioTracks().forEach(t => {
-        localStream.getAudioTracks().forEach(old => { old.stop(); localStream.removeTrack(old); });
-        localStream.addTrack(t);
-      });
+      localStream.getAudioTracks().forEach(old => { old.stop(); localStream?.removeTrack(old); });
+      localStream.addTrack(track);
+      // FIX 4: replace via transceiver
       if(pc) {
-        const sender = pc.getSenders().find(s => s.track?.kind === 'audio');
-        if(sender) await sender.replaceTrack(audStream.getAudioTracks()[0]);
+        const tr = pc.getTransceivers().find(t => t.receiver.track?.kind === 'audio' || t.sender.track?.kind === 'audio' || (t.sender.track === null));
+        if(tr) await tr.sender.replaceTrack(track);
+        else pc.addTrack(track, localStream);
       }
     } catch(e) {
-      console.error('[mic] getUserMedia failed:', e);
-      micOn = false;
+      console.error('[mic] getUserMedia failed:', e); micOn = false;
     }
   } else {
-    // Mute: keep track but disable it (preserves connection)
+    // Just disable — keep track alive so connection stays healthy
     localStream?.getAudioTracks().forEach(t => { t.enabled = false; });
   }
   updateAVUI();
